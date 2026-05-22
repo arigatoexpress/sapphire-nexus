@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { EVIDENCE_LEDGER_SCHEMA_ID, buildEvidenceLedger } from "./evidence.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -79,6 +80,7 @@ export function buildWellKnown(origin: string) {
       health: "/health",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
+      evidenceLedger: "/v1/evidence-ledger",
       modelGateway: "/v1/model-gateway",
       modelGatewayReadiness: "/v1/model-gateway/readiness",
       marketResearchPosture: "/v1/market/research-posture",
@@ -87,6 +89,7 @@ export function buildWellKnown(origin: string) {
       health: HEALTH_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
+      evidenceLedger: EVIDENCE_LEDGER_SCHEMA_ID,
       modelGateway: MODEL_GATEWAY_SCHEMA_ID,
       modelGatewayReadiness: MODEL_GATEWAY_READINESS_SCHEMA_ID,
       marketResearchPosture: MARKET_RESEARCH_SCHEMA_ID,
@@ -118,6 +121,10 @@ export function buildThesis(landscape = loadLandscape()) {
     ],
     blockedClaims: buildBlockedClaims(),
   };
+}
+
+export function buildLandscapeEvidenceLedger(landscape = loadLandscape()) {
+  return buildEvidenceLedger(landscape);
 }
 
 export function buildModelGateway(env = process.env) {

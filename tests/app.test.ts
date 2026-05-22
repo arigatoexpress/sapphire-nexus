@@ -26,6 +26,12 @@ describe("Sapphire Nexus API", () => {
     const landscape = await landscapeRes.json();
     expect(landscape.schemaId).toBe("sapphire.nexus.landscape.v1");
 
+    const ledgerRes = await app.request("/v1/evidence-ledger");
+    expect(ledgerRes.status).toBe(200);
+    const ledger = await ledgerRes.json();
+    expect(ledger.schemaId).toBe("sapphire.nexus.evidence_ledger.v1");
+    expect(ledger.safety.rawPayloadsStored).toBe(false);
+
     const marketRes = await app.request("/v1/market/research-posture");
     expect(marketRes.status).toBe(200);
     const market = await marketRes.json();
