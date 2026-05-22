@@ -6,4 +6,4 @@ dist/
 !.env.example
 data/generated/
 coverage/
-
+.playwright-cli/

@@ -18,6 +18,13 @@ export function createApp() {
   const app = new Hono();
 
   app.get("/", (c) => c.html(renderWorkbench(loadLandscape())));
+  app.get("/favicon.ico", (c) =>
+    c.body(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#101216"/><text x="32" y="39" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#57d6ff">SN</text></svg>',
+      200,
+      { "content-type": "image/svg+xml; charset=utf-8", "cache-control": "public, max-age=86400" },
+    ),
+  );
   app.get("/health", (c) => c.json(buildHealth()));
   app.get("/.well-known/sapphire-nexus.json", (c) => c.json(buildWellKnown(publicOrigin(c.req.raw))));
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
