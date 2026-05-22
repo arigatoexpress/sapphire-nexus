@@ -2,8 +2,8 @@
 
 Sapphire Nexus starts as a small local-first system:
 
-1. **Contracts**: stable JSON responses for health, thesis, landscape, model
-   gateway, and market-research posture.
+1. **Contracts**: stable JSON responses for health, thesis, landscape,
+   readiness, model gateway, and market-research posture.
 2. **Evidence Ledger**: source ids, repo links, retrieval notes, and safety
    caveats. No raw private payload dumps.
 3. **Local Model Gateway**: Ollama-compatible endpoint today; Windows GPU or

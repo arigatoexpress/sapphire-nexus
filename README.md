@@ -38,6 +38,7 @@ Default URL: `http://127.0.0.1:4420`.
 - `GET /.well-known/sapphire-nexus.json`
 - `GET /v1/thesis`
 - `GET /v1/landscape`
+- `GET /v1/readiness`
 - `GET /v1/evidence-ledger`
 - `GET /v1/adapters/aoe/readiness`
 - `GET /v1/adapters/agent-runtime/publication`
@@ -55,6 +56,10 @@ infrastructure mutation.
 `GET /v1/model-gateway/readiness` performs health-only readbacks against the
 configured local model gateways. It does not send prompts, start training, read
 secrets, or mutate runtimes.
+
+`GET /v1/readiness` rolls core health, evidence, model gateway, prompt smoke,
+AOE, and agent-runtime publication checks into one operator status envelope. It
+keeps per-check details summary-only and does not store raw payloads.
 
 `GET /v1/model-gateway/prompt-smoke` is disabled by default. When
 `SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED=true` and
