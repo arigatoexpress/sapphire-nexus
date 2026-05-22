@@ -39,6 +39,7 @@ Default URL: `http://127.0.0.1:4420`.
 - `GET /v1/thesis`
 - `GET /v1/landscape`
 - `GET /v1/model-gateway`
+- `GET /v1/model-gateway/readiness`
 - `GET /v1/market/research-posture`
 
 ## Safety Posture
@@ -47,3 +48,6 @@ All risky lanes are disabled by default: live trading, money movement, wallet
 signing, Telegram sends, customer sends, secret handling, and production
 infrastructure mutation.
 
+`GET /v1/model-gateway/readiness` performs health-only readbacks against the
+configured local model gateways. It does not send prompts, start training, read
+secrets, or mutate runtimes.

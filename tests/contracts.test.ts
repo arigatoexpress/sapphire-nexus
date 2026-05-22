@@ -3,6 +3,7 @@ import {
   buildHealth,
   buildMarketResearchPosture,
   buildModelGateway,
+  checkModelGatewayReadiness,
   buildThesis,
   buildWellKnown,
   loadLandscape,
@@ -28,6 +29,7 @@ describe("Sapphire Nexus contracts", () => {
 
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
     expect(wellKnown.schemaIds.modelGateway).toBe("sapphire.nexus.model_gateway.v1");
+    expect(wellKnown.schemaIds.modelGatewayReadiness).toBe("sapphire.nexus.model_gateway_readiness.v1");
     expect(wellKnown.routes.marketResearchPosture).toBe("/v1/market/research-posture");
     expect(wellKnown.safety.liveTradingAllowed).toBe(false);
     expect(wellKnown.safety.productionInfraMutationAllowed).toBe(false);
@@ -51,6 +53,32 @@ describe("Sapphire Nexus contracts", () => {
     expect(gateway.policy.readsSecrets).toBe(false);
     expect(gateway.policy.canTrainModels).toBe(false);
     expect(gateway.policy.trainingRequiresExplicitDatasetPlan).toBe(true);
+  });
+
+  test("model gateway readiness probes health without prompts or mutation", async () => {
+    const fakeFetch = async (url: string | URL | Request) => {
+      const value = String(url);
+      if (value.endsWith("/api/tags")) {
+        return Response.json({ models: [{ name: "qwen3.6:27b" }, { name: "hermes3:8b" }] });
+      }
+      return Response.json({ status: "healthy", service: "windows_webhook" });
+    };
+
+    const readiness = await checkModelGatewayReadiness({
+      env: {
+        SAPPHIRE_NEXUS_OLLAMA_URL: "http://127.0.0.1:11434",
+        SAPPHIRE_NEXUS_WINDOWS_GPU_URL: "http://192.168.1.61:9090",
+      },
+      fetchImpl: fakeFetch as typeof fetch,
+      now: new Date("2026-05-22T17:00:00.000-06:00"),
+    });
+
+    expect(readiness.schemaId).toBe("sapphire.nexus.model_gateway_readiness.v1");
+    expect(readiness.summary.ready).toBe(2);
+    expect(readiness.safety.sendsPrompts).toBe(false);
+    expect(readiness.safety.startsTraining).toBe(false);
+    expect(readiness.gateways[0].detail).toEqual({ modelCount: 2, modelNames: ["qwen3.6:27b", "hermes3:8b"] });
+    expect(readiness.gateways[1].detail).toEqual({ status: "healthy", service: "windows_webhook" });
   });
 
   test("market posture is research-only and blocks execution language", () => {

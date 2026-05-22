@@ -10,6 +10,7 @@ export const WELL_KNOWN_SCHEMA_ID = "sapphire.nexus.discovery.v1";
 export const THESIS_SCHEMA_ID = "sapphire.nexus.thesis.v1";
 export const LANDSCAPE_SCHEMA_ID = "sapphire.nexus.landscape.v1";
 export const MODEL_GATEWAY_SCHEMA_ID = "sapphire.nexus.model_gateway.v1";
+export const MODEL_GATEWAY_READINESS_SCHEMA_ID = "sapphire.nexus.model_gateway_readiness.v1";
 export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture.v1";
 
 const LandscapeSchema = z.object({
@@ -79,6 +80,7 @@ export function buildWellKnown(origin: string) {
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
       modelGateway: "/v1/model-gateway",
+      modelGatewayReadiness: "/v1/model-gateway/readiness",
       marketResearchPosture: "/v1/market/research-posture",
     },
     schemaIds: {
@@ -86,6 +88,7 @@ export function buildWellKnown(origin: string) {
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
       modelGateway: MODEL_GATEWAY_SCHEMA_ID,
+      modelGatewayReadiness: MODEL_GATEWAY_READINESS_SCHEMA_ID,
       marketResearchPosture: MARKET_RESEARCH_SCHEMA_ID,
     },
     safety: buildSafetyBoundary(),
@@ -150,6 +153,74 @@ export function buildModelGateway(env = process.env) {
   };
 }
 
+export async function checkModelGatewayReadiness(options: {
+  env?: NodeJS.ProcessEnv;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+  now?: Date;
+} = {}) {
+  const env = options.env ?? process.env;
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const timeoutMs = options.timeoutMs ?? 1_500;
+  const modelGateway = buildModelGateway(env);
+  const gatewayReadiness = await Promise.all(
+    modelGateway.gateways.map(async (gateway) => {
+      const probePath = gateway.id === "ollama-local" ? "/api/tags" : "/health";
+      const url = `${gateway.baseUrl.replace(/\/$/, "")}${probePath}`;
+      const started = Date.now();
+      try {
+        const response = await fetchWithTimeout(fetchImpl, url, timeoutMs);
+        const durationMs = Date.now() - started;
+        let detail: Record<string, unknown> = {};
+        if (response.ok) {
+          detail = await safeJson(response);
+        }
+        return {
+          id: gateway.id,
+          role: gateway.role,
+          url,
+          reachable: response.ok,
+          status: response.ok ? "ready" : "unhealthy",
+          statusCode: response.status,
+          durationMs,
+          detail: gateway.id === "ollama-local" ? summarizeOllama(detail) : summarizeGenericHealth(detail),
+        };
+      } catch (error) {
+        return {
+          id: gateway.id,
+          role: gateway.role,
+          url,
+          reachable: false,
+          status: "unreachable",
+          statusCode: null,
+          durationMs: Date.now() - started,
+          detail: {
+            error: error instanceof Error ? error.name : "unknown_error",
+          },
+        };
+      }
+    }),
+  );
+
+  return {
+    schemaId: MODEL_GATEWAY_READINESS_SCHEMA_ID,
+    generatedAt: (options.now ?? new Date()).toISOString(),
+    safety: {
+      readsSecrets: false,
+      sendsPrompts: false,
+      startsTraining: false,
+      mutatesRuntime: false,
+      liveTradingAllowed: false,
+    },
+    summary: {
+      gateways: gatewayReadiness.length,
+      ready: gatewayReadiness.filter((gateway) => gateway.status === "ready").length,
+      degraded: gatewayReadiness.filter((gateway) => gateway.status !== "ready").length,
+    },
+    gateways: gatewayReadiness,
+  };
+}
+
 export function buildMarketResearchPosture() {
   return {
     schemaId: MARKET_RESEARCH_SCHEMA_ID,
@@ -162,6 +233,43 @@ export function buildMarketResearchPosture() {
     allowedOutputs: ["market context", "source-linked research notes", "paper signal experiments", "backtest reports"],
     blockedOutputs: ["buy/sell/hold advice", "price targets", "live execution", "autonomous portfolio changes"],
     candidateLibraries: ["microsoft/qlib", "polakowo/vectorbt", "OpenBB-finance/OpenBB", "freqtrade/freqtrade"],
+  };
+}
+
+async function fetchWithTimeout(fetchImpl: typeof fetch, url: string, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetchImpl(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function safeJson(response: Response): Promise<Record<string, unknown>> {
+  try {
+    const value = await response.json();
+    return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function summarizeOllama(detail: Record<string, unknown>) {
+  const models = Array.isArray(detail.models) ? detail.models : [];
+  return {
+    modelCount: models.length,
+    modelNames: models
+      .map((model) => (typeof model === "object" && model !== null && "name" in model ? String(model.name) : null))
+      .filter((value): value is string => Boolean(value))
+      .slice(0, 12),
+  };
+}
+
+function summarizeGenericHealth(detail: Record<string, unknown>) {
+  return {
+    status: typeof detail.status === "string" ? detail.status : "unknown",
+    service: typeof detail.service === "string" ? detail.service : "unknown",
   };
 }
 
