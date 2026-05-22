@@ -14,6 +14,12 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("Reference Only");
   });
 
+  test("serves a favicon to keep browser smoke clean", async () => {
+    const res = await app.request("/favicon.ico");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("image/svg+xml");
+  });
+
   test("serves machine-readable discovery and core routes", async () => {
     const discoveryRes = await app.request("http://127.0.0.1:4420/.well-known/sapphire-nexus.json");
     expect(discoveryRes.status).toBe(200);
