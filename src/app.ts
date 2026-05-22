@@ -3,6 +3,7 @@ import {
   buildHealth,
   buildMarketResearchPosture,
   buildModelGateway,
+  checkModelGatewayReadiness,
   buildThesis,
   buildWellKnown,
   loadLandscape,
@@ -19,8 +20,8 @@ export function createApp() {
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
   app.get("/v1/model-gateway", (c) => c.json(buildModelGateway()));
+  app.get("/v1/model-gateway/readiness", async (c) => c.json(await checkModelGatewayReadiness()));
   app.get("/v1/market/research-posture", (c) => c.json(buildMarketResearchPosture()));
 
   return app;
 }
-
