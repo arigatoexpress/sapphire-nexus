@@ -50,6 +50,13 @@ describe("Sapphire Nexus API", () => {
     expect(runtime.schemaId).toBe("sapphire.nexus.adapter.agent_runtime_publication.v1");
     expect(runtime.safety.storesGeneratedPayloads).toBe(false);
 
+    const promptSmokeRes = await app.request("/v1/model-gateway/prompt-smoke");
+    expect(promptSmokeRes.status).toBe(200);
+    const promptSmoke = await promptSmokeRes.json();
+    expect(promptSmoke.schemaId).toBe("sapphire.nexus.model_prompt_smoke.v1");
+    expect(promptSmoke.summary.status).toBe("disabled");
+    expect(promptSmoke.safety.storesPrompts).toBe(false);
+
     const marketRes = await app.request("/v1/market/research-posture");
     expect(marketRes.status).toBe(200);
     const market = await marketRes.json();

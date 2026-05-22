@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -14,7 +15,9 @@ export const THESIS_SCHEMA_ID = "sapphire.nexus.thesis.v1";
 export const LANDSCAPE_SCHEMA_ID = "sapphire.nexus.landscape.v1";
 export const MODEL_GATEWAY_SCHEMA_ID = "sapphire.nexus.model_gateway.v1";
 export const MODEL_GATEWAY_READINESS_SCHEMA_ID = "sapphire.nexus.model_gateway_readiness.v1";
+export const MODEL_PROMPT_SMOKE_SCHEMA_ID = "sapphire.nexus.model_prompt_smoke.v1";
 export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture.v1";
+const FIXED_PROMPT_SMOKE_PROMPT = "Return exactly the token NEXUS_OK.";
 
 const LandscapeSchema = z.object({
   schemaId: z.literal(LANDSCAPE_SCHEMA_ID),
@@ -87,6 +90,7 @@ export function buildWellKnown(origin: string) {
       agentRuntimePublication: "/v1/adapters/agent-runtime/publication",
       modelGateway: "/v1/model-gateway",
       modelGatewayReadiness: "/v1/model-gateway/readiness",
+      modelPromptSmoke: "/v1/model-gateway/prompt-smoke",
       marketResearchPosture: "/v1/market/research-posture",
     },
     schemaIds: {
@@ -98,6 +102,7 @@ export function buildWellKnown(origin: string) {
       agentRuntimePublication: AGENT_RUNTIME_PUBLICATION_ADAPTER_SCHEMA_ID,
       modelGateway: MODEL_GATEWAY_SCHEMA_ID,
       modelGatewayReadiness: MODEL_GATEWAY_READINESS_SCHEMA_ID,
+      modelPromptSmoke: MODEL_PROMPT_SMOKE_SCHEMA_ID,
       marketResearchPosture: MARKET_RESEARCH_SCHEMA_ID,
     },
     safety: buildSafetyBoundary(),
@@ -161,6 +166,8 @@ export function buildModelGateway(env = process.env) {
       readsSecrets: false,
       canTrainModels: false,
       trainingRequiresExplicitDatasetPlan: true,
+      promptSmokeRequiresExplicitEnable: true,
+      promptSmokeStoresPromptOrCompletion: false,
       cloudFallbackAllowed: "only after local verification and source-rights review",
     },
   };
@@ -234,6 +241,107 @@ export async function checkModelGatewayReadiness(options: {
   };
 }
 
+export async function checkModelPromptSmoke(options: {
+  env?: NodeJS.ProcessEnv;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+  now?: Date;
+} = {}) {
+  const env = options.env ?? process.env;
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const timeoutMs = options.timeoutMs ?? 3_000;
+  const ollamaUrl = env.SAPPHIRE_NEXUS_OLLAMA_URL ?? "http://127.0.0.1:11434";
+  const model = env.SAPPHIRE_NEXUS_PROMPT_SMOKE_MODEL;
+  const enabled = parseBoolean(env.SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED) === true;
+  const url = `${ollamaUrl.replace(/\/$/, "")}/api/generate`;
+  const safety = buildPromptSmokeSafety(enabled);
+
+  const base = {
+    schemaId: MODEL_PROMPT_SMOKE_SCHEMA_ID,
+    generatedAt: (options.now ?? new Date()).toISOString(),
+    mode: "fixed_prompt_healthcheck",
+    policy: {
+      enabled,
+      requiresExplicitEnable: true,
+      requiresExplicitModel: true,
+      cloudFallbackAllowed: false,
+      promptTextReturned: false,
+      completionTextReturned: false,
+      promptHash: hashText(FIXED_PROMPT_SMOKE_PROMPT),
+    },
+    gateway: {
+      id: "ollama-local",
+      url,
+      model: model ?? null,
+    },
+    safety,
+  };
+
+  if (!enabled) {
+    return {
+      ...base,
+      summary: { status: "disabled", ready: false, reason: "SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED is not true" },
+      result: null,
+    };
+  }
+
+  if (!model) {
+    return {
+      ...base,
+      summary: { status: "blocked", ready: false, reason: "SAPPHIRE_NEXUS_PROMPT_SMOKE_MODEL is required" },
+      result: null,
+    };
+  }
+
+  const started = Date.now();
+  try {
+    const response = await fetchWithTimeout(fetchImpl, url, timeoutMs, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model,
+        prompt: FIXED_PROMPT_SMOKE_PROMPT,
+        stream: false,
+        options: {
+          temperature: 0,
+          num_predict: 8,
+        },
+      }),
+    });
+    const durationMs = Date.now() - started;
+    const detail = response.ok ? await safeJson(response) : {};
+    const completion = typeof detail.response === "string" ? detail.response : "";
+    const completionReturned = completion.length > 0;
+    const matched = /\bNEXUS_OK\b/.test(completion);
+    return {
+      ...base,
+      summary: {
+        status: response.ok && completionReturned ? "ready" : "degraded",
+        ready: response.ok && completionReturned,
+        reason: response.ok ? "fixed prompt returned completion" : "ollama prompt smoke returned non-2xx",
+      },
+      result: {
+        statusCode: response.status,
+        durationMs,
+        completionReturned,
+        completionMatched: matched,
+        completionChars: completion.length,
+        responseDone: typeof detail.done === "boolean" ? detail.done : null,
+      },
+    };
+  } catch (error) {
+    return {
+      ...base,
+      summary: { status: "unreachable", ready: false, reason: "ollama prompt smoke request failed" },
+      result: {
+        statusCode: null,
+        durationMs: Date.now() - started,
+        error: error instanceof Error ? error.name : "unknown_error",
+      },
+    };
+  }
+}
+
 export function buildMarketResearchPosture() {
   return {
     schemaId: MARKET_RESEARCH_SCHEMA_ID,
@@ -249,11 +357,11 @@ export function buildMarketResearchPosture() {
   };
 }
 
-async function fetchWithTimeout(fetchImpl: typeof fetch, url: string, timeoutMs: number) {
+async function fetchWithTimeout(fetchImpl: typeof fetch, url: string, timeoutMs: number, init: RequestInit = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetchImpl(url, { signal: controller.signal });
+    return await fetchImpl(url, { ...init, signal: controller.signal });
   } finally {
     clearTimeout(timeout);
   }
@@ -283,6 +391,33 @@ function summarizeGenericHealth(detail: Record<string, unknown>) {
   return {
     status: typeof detail.status === "string" ? detail.status : "unknown",
     service: typeof detail.service === "string" ? detail.service : "unknown",
+  };
+}
+
+function parseBoolean(value: string | undefined) {
+  if (value === undefined) {
+    return undefined;
+  }
+  return ["1", "true", "yes"].includes(value.toLowerCase());
+}
+
+function hashText(value: string) {
+  return `sha256:${createHash("sha256").update(value).digest("hex")}`;
+}
+
+function buildPromptSmokeSafety(enabled: boolean) {
+  return {
+    readsSecrets: false,
+    sendsUserPrompts: false,
+    sendsFixedHealthcheckPrompt: enabled,
+    storesPrompts: false,
+    storesCompletions: false,
+    returnsPromptText: false,
+    returnsCompletionText: false,
+    startsTraining: false,
+    mutatesRuntime: false,
+    cloudFallbackAllowed: false,
+    liveTradingAllowed: false,
   };
 }
 

@@ -7,6 +7,7 @@ import {
   buildMarketResearchPosture,
   buildModelGateway,
   checkModelGatewayReadiness,
+  checkModelPromptSmoke,
   buildThesis,
   buildWellKnown,
   loadLandscape,
@@ -36,6 +37,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.agentRuntimePublication).toBe("sapphire.nexus.adapter.agent_runtime_publication.v1");
     expect(wellKnown.schemaIds.modelGateway).toBe("sapphire.nexus.model_gateway.v1");
     expect(wellKnown.schemaIds.modelGatewayReadiness).toBe("sapphire.nexus.model_gateway_readiness.v1");
+    expect(wellKnown.routes.modelPromptSmoke).toBe("/v1/model-gateway/prompt-smoke");
+    expect(wellKnown.schemaIds.modelPromptSmoke).toBe("sapphire.nexus.model_prompt_smoke.v1");
     expect(wellKnown.routes.marketResearchPosture).toBe("/v1/market/research-posture");
     expect(wellKnown.safety.liveTradingAllowed).toBe(false);
     expect(wellKnown.safety.productionInfraMutationAllowed).toBe(false);
@@ -219,6 +222,65 @@ describe("Sapphire Nexus contracts", () => {
     expect(readiness.safety.startsTraining).toBe(false);
     expect(readiness.gateways[0].detail).toEqual({ modelCount: 2, modelNames: ["qwen3.6:27b", "hermes3:8b"] });
     expect(readiness.gateways[1].detail).toEqual({ status: "healthy", service: "windows_webhook" });
+  });
+
+  test("model prompt smoke is disabled by default and stores no prompt text", async () => {
+    let called = false;
+    const report = await checkModelPromptSmoke({
+      env: { SAPPHIRE_NEXUS_OLLAMA_URL: "http://127.0.0.1:11434" },
+      fetchImpl: (async () => {
+        called = true;
+        return Response.json({});
+      }) as typeof fetch,
+      now: new Date("2026-05-22T17:35:00.000-06:00"),
+    });
+
+    expect(called).toBe(false);
+    expect(report.schemaId).toBe("sapphire.nexus.model_prompt_smoke.v1");
+    expect(report.summary.status).toBe("disabled");
+    expect(report.safety.sendsUserPrompts).toBe(false);
+    expect(report.safety.sendsFixedHealthcheckPrompt).toBe(false);
+    expect(report.safety.storesPrompts).toBe(false);
+    expect(report.policy.promptHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(JSON.stringify(report)).not.toContain("Return exactly");
+  });
+
+  test("model prompt smoke sends only a fixed healthcheck prompt when explicitly enabled", async () => {
+    const seen: Array<{ url: string; body: Record<string, unknown> }> = [];
+    const fakeFetch = async (url: string | URL | Request, init?: RequestInit) => {
+      seen.push({
+        url: String(url),
+        body: JSON.parse(String(init?.body)) as Record<string, unknown>,
+      });
+      return Response.json({ response: "NEXUS_OK", done: true });
+    };
+
+    const report = await checkModelPromptSmoke({
+      env: {
+        SAPPHIRE_NEXUS_OLLAMA_URL: "http://127.0.0.1:11434",
+        SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED: "true",
+        SAPPHIRE_NEXUS_PROMPT_SMOKE_MODEL: "qwen3.6:27b",
+      },
+      fetchImpl: fakeFetch as typeof fetch,
+      now: new Date("2026-05-22T17:36:00.000-06:00"),
+    });
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0].url).toBe("http://127.0.0.1:11434/api/generate");
+    expect(seen[0].body).toEqual({
+      model: "qwen3.6:27b",
+      prompt: "Return exactly the token NEXUS_OK.",
+      stream: false,
+      options: { temperature: 0, num_predict: 8 },
+    });
+    expect(report.summary.status).toBe("ready");
+    expect(report.result?.completionReturned).toBe(true);
+    expect(report.result?.completionMatched).toBe(true);
+    expect(report.safety.sendsUserPrompts).toBe(false);
+    expect(report.safety.sendsFixedHealthcheckPrompt).toBe(true);
+    expect(report.safety.storesCompletions).toBe(false);
+    expect(JSON.stringify(report)).not.toContain("Return exactly");
+    expect(JSON.stringify(report)).not.toContain("NEXUS_OK");
   });
 
   test("market posture is research-only and blocks execution language", () => {
