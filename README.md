@@ -39,6 +39,7 @@ Default URL: `http://127.0.0.1:4420`.
 - `GET /v1/thesis`
 - `GET /v1/landscape`
 - `GET /v1/evidence-ledger`
+- `GET /v1/adapters/aoe/readiness`
 - `GET /v1/model-gateway`
 - `GET /v1/model-gateway/readiness`
 - `GET /v1/market/research-posture`
@@ -56,3 +57,8 @@ secrets, or mutate runtimes.
 `GET /v1/evidence-ledger` turns the landscape catalog into stable, hash-addressed
 evidence records. It stores links, source ids, rights metadata, summaries, and
 hashes; it does not store raw private payloads.
+
+`GET /v1/adapters/aoe/readiness` reads AOE's public health, discovery,
+readiness, and contract endpoints and keeps only summaries. It does not settle
+payments, unlock paid content, send Telegram messages, or store raw contract
+bundles.
