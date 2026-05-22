@@ -7,6 +7,7 @@ import {
   buildModelGateway,
   buildLandscapeEvidenceLedger,
   checkModelGatewayReadiness,
+  checkModelPromptSmoke,
   buildThesis,
   buildWellKnown,
   loadLandscape,
@@ -34,6 +35,7 @@ export function createApp() {
   app.get("/v1/adapters/agent-runtime/publication", async (c) => c.json(await checkAgentRuntimePublication()));
   app.get("/v1/model-gateway", (c) => c.json(buildModelGateway()));
   app.get("/v1/model-gateway/readiness", async (c) => c.json(await checkModelGatewayReadiness()));
+  app.get("/v1/model-gateway/prompt-smoke", async (c) => c.json(await checkModelPromptSmoke()));
   app.get("/v1/market/research-posture", (c) => c.json(buildMarketResearchPosture()));
 
   return app;

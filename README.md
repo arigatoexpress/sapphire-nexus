@@ -43,6 +43,7 @@ Default URL: `http://127.0.0.1:4420`.
 - `GET /v1/adapters/agent-runtime/publication`
 - `GET /v1/model-gateway`
 - `GET /v1/model-gateway/readiness`
+- `GET /v1/model-gateway/prompt-smoke`
 - `GET /v1/market/research-posture`
 
 ## Safety Posture
@@ -54,6 +55,13 @@ infrastructure mutation.
 `GET /v1/model-gateway/readiness` performs health-only readbacks against the
 configured local model gateways. It does not send prompts, start training, read
 secrets, or mutate runtimes.
+
+`GET /v1/model-gateway/prompt-smoke` is disabled by default. When
+`SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED=true` and
+`SAPPHIRE_NEXUS_PROMPT_SMOKE_MODEL` is set, it sends one fixed health-check
+prompt to local Ollama and returns only status, hashes, booleans, and lengths.
+It does not return or store prompt text, completion text, user prompts, cloud
+fallbacks, training jobs, or runtime mutations.
 
 `GET /v1/evidence-ledger` turns the landscape catalog into stable, hash-addressed
 evidence records. It stores links, source ids, rights metadata, summaries, and

@@ -7,7 +7,8 @@ Sapphire Nexus starts as a small local-first system:
 2. **Evidence Ledger**: source ids, repo links, retrieval notes, and safety
    caveats. No raw private payload dumps.
 3. **Local Model Gateway**: Ollama-compatible endpoint today; Windows GPU or
-   vLLM-compatible endpoint later.
+   vLLM-compatible endpoint later. Prompt smoke is opt-in and returns only
+   readiness metadata, not prompt or completion text.
 4. **Workbench**: dense operator UI that shows readiness, source posture, and
    blocked live-action claims.
 5. **Adapters**: future adapters consume AOE, agent-runtime-control-plane,
@@ -27,4 +28,3 @@ Sapphire Nexus starts as a small local-first system:
 - Market outputs are research, not advice or execution.
 - Local model serving is a gateway contract, not a hard dependency.
 - GCP is a deploy option after local verification, not the first dependency.
-
