@@ -40,6 +40,7 @@ Default URL: `http://127.0.0.1:4420`.
 - `GET /v1/landscape`
 - `GET /v1/evidence-ledger`
 - `GET /v1/adapters/aoe/readiness`
+- `GET /v1/adapters/agent-runtime/publication`
 - `GET /v1/model-gateway`
 - `GET /v1/model-gateway/readiness`
 - `GET /v1/market/research-posture`
@@ -62,3 +63,8 @@ hashes; it does not store raw private payloads.
 readiness, and contract endpoints and keeps only summaries. It does not settle
 payments, unlock paid content, send Telegram messages, or store raw contract
 bundles.
+
+`GET /v1/adapters/agent-runtime/publication` runs the control plane's
+publication-plan script and returns a summary of tracked-source readiness,
+generated-output exclusion, and visibility gates. It does not read generated
+payload contents, broaden permissions, publish repos, or mutate runtimes.

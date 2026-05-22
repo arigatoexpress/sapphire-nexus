@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { checkAoeReadiness } from "../src/adapters/aoe.js";
+import { checkAgentRuntimePublication } from "../src/adapters/agent-runtime.js";
 import {
   buildHealth,
   buildLandscapeEvidenceLedger,
@@ -32,6 +33,7 @@ describe("Sapphire Nexus contracts", () => {
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(wellKnown.schemaIds.aoeReadiness).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
+    expect(wellKnown.schemaIds.agentRuntimePublication).toBe("sapphire.nexus.adapter.agent_runtime_publication.v1");
     expect(wellKnown.schemaIds.modelGateway).toBe("sapphire.nexus.model_gateway.v1");
     expect(wellKnown.schemaIds.modelGatewayReadiness).toBe("sapphire.nexus.model_gateway_readiness.v1");
     expect(wellKnown.routes.marketResearchPosture).toBe("/v1/market/research-posture");
@@ -127,6 +129,58 @@ describe("Sapphire Nexus contracts", () => {
         schemaCatalogCount: 2,
       }),
     );
+  });
+
+  test("agent runtime adapter summarizes publication plan without generated payloads", async () => {
+    const report = await checkAgentRuntimePublication({
+      repoRoot: "/tmp/agent-runtime-control-plane",
+      now: new Date("2026-05-22T17:28:00.000-06:00"),
+      commandRunner: async () => ({
+        stdout: JSON.stringify({
+          schema: "aribs.agent_runtime_publication_plan.v1",
+          safety: {
+            mutatesRuntime: false,
+            readsSecretValues: false,
+            publishesRepo: false,
+            generatedDataContentRead: false,
+          },
+          repository: {
+            packagePrivate: true,
+            remote: "https://github.com/arigatoexpress/agent-runtime-control-plane.git",
+            visibilityCheck: "verify GitHub visibility with gh repo view before changing repository access",
+          },
+          readiness: {
+            publicExportBlocked: false,
+            trackedSourceReady: true,
+            auditViolationCount: 0,
+            generatedTrackedViolationCount: 0,
+            secretViolationCount: 0,
+            ignoredGeneratedOutputCount: 2,
+          },
+          exportPolicy: {
+            include: ["tracked source"],
+            exclude: ["generated data", "secrets"],
+            requiresHumanApprovalBeforePublicVisibilityChange: true,
+          },
+          generatedOutputs: [
+            { path: "data/runtime-surfaces.json", bytes: 100, publishAction: "exclude" },
+            { path: "data/contract-inventory.json", bytes: 50, publishAction: "exclude" },
+          ],
+          violations: [],
+        }),
+      }),
+    });
+
+    expect(report.schemaId).toBe("sapphire.nexus.adapter.agent_runtime_publication.v1");
+    expect(report.summary.status).toBe("ready");
+    expect(report.summary.ignoredGeneratedOutputBytes).toBe(150);
+    expect(report.safety.storesGeneratedPayloads).toBe(false);
+    expect(report.safety.broadensPermissions).toBe(false);
+    expect(report.exportPolicy.requiresHumanApprovalBeforePublicVisibilityChange).toBe(true);
+    expect(report.generatedOutputs).toEqual([
+      { path: "data/runtime-surfaces.json", bytes: 100, publishAction: "exclude" },
+      { path: "data/contract-inventory.json", bytes: 50, publishAction: "exclude" },
+    ]);
   });
 
   test("model gateway exposes Ollama and Windows GPU as contracts only", () => {

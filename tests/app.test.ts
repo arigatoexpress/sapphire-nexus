@@ -38,6 +38,12 @@ describe("Sapphire Nexus API", () => {
     expect(aoe.schemaId).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
     expect(aoe.safety.paymentSettlementAllowed).toBe(false);
 
+    const runtimeRes = await app.request("/v1/adapters/agent-runtime/publication");
+    expect(runtimeRes.status).toBe(200);
+    const runtime = await runtimeRes.json();
+    expect(runtime.schemaId).toBe("sapphire.nexus.adapter.agent_runtime_publication.v1");
+    expect(runtime.safety.storesGeneratedPayloads).toBe(false);
+
     const marketRes = await app.request("/v1/market/research-posture");
     expect(marketRes.status).toBe(200);
     const market = await marketRes.json();

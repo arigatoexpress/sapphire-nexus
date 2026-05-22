@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { checkAoeReadiness } from "./adapters/aoe.js";
+import { checkAgentRuntimePublication } from "./adapters/agent-runtime.js";
 import {
   buildHealth,
   buildMarketResearchPosture,
@@ -23,6 +24,7 @@ export function createApp() {
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
   app.get("/v1/evidence-ledger", (c) => c.json(buildLandscapeEvidenceLedger()));
   app.get("/v1/adapters/aoe/readiness", async (c) => c.json(await checkAoeReadiness()));
+  app.get("/v1/adapters/agent-runtime/publication", async (c) => c.json(await checkAgentRuntimePublication()));
   app.get("/v1/model-gateway", (c) => c.json(buildModelGateway()));
   app.get("/v1/model-gateway/readiness", async (c) => c.json(await checkModelGatewayReadiness()));
   app.get("/v1/market/research-posture", (c) => c.json(buildMarketResearchPosture()));
