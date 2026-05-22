@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   buildHealth,
+  buildLandscapeEvidenceLedger,
   buildMarketResearchPosture,
   buildModelGateway,
   checkModelGatewayReadiness,
@@ -28,6 +29,7 @@ describe("Sapphire Nexus contracts", () => {
     expect(health.liveActionsEnabled).toBe(false);
 
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
+    expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(wellKnown.schemaIds.modelGateway).toBe("sapphire.nexus.model_gateway.v1");
     expect(wellKnown.schemaIds.modelGatewayReadiness).toBe("sapphire.nexus.model_gateway_readiness.v1");
     expect(wellKnown.routes.marketResearchPosture).toBe("/v1/market/research-posture");
@@ -41,6 +43,17 @@ describe("Sapphire Nexus contracts", () => {
     expect(thesis.preserveAsProducts).toContain("0guard");
     expect(thesis.blockedClaims).toContain("THO or Project-Go-Forward ownership");
     expect(thesis.architecture).toContain("local model gateway contract");
+  });
+
+  test("evidence ledger stores stable hashes and no raw payloads", () => {
+    const ledger = buildLandscapeEvidenceLedger();
+    expect(ledger.schemaId).toBe("sapphire.nexus.evidence_ledger.v1");
+    expect(ledger.safety.rawPayloadsStored).toBe(false);
+    expect(ledger.safety.readsSecrets).toBe(false);
+    expect(ledger.summary.records).toBeGreaterThan(10);
+    expect(ledger.summary.byKind["owned-repo"]).toBeGreaterThan(3);
+    expect(ledger.records[0].evidenceHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(ledger.records.some((record) => record.sourceId === "arigatoexpress/Sapphire")).toBe(true);
   });
 
   test("model gateway exposes Ollama and Windows GPU as contracts only", () => {

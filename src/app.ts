@@ -3,6 +3,7 @@ import {
   buildHealth,
   buildMarketResearchPosture,
   buildModelGateway,
+  buildLandscapeEvidenceLedger,
   checkModelGatewayReadiness,
   buildThesis,
   buildWellKnown,
@@ -19,6 +20,7 @@ export function createApp() {
   app.get("/.well-known/sapphire-nexus.json", (c) => c.json(buildWellKnown(publicOrigin(c.req.raw))));
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
+  app.get("/v1/evidence-ledger", (c) => c.json(buildLandscapeEvidenceLedger()));
   app.get("/v1/model-gateway", (c) => c.json(buildModelGateway()));
   app.get("/v1/model-gateway/readiness", async (c) => c.json(await checkModelGatewayReadiness()));
   app.get("/v1/market/research-posture", (c) => c.json(buildMarketResearchPosture()));

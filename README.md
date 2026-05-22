@@ -38,6 +38,7 @@ Default URL: `http://127.0.0.1:4420`.
 - `GET /.well-known/sapphire-nexus.json`
 - `GET /v1/thesis`
 - `GET /v1/landscape`
+- `GET /v1/evidence-ledger`
 - `GET /v1/model-gateway`
 - `GET /v1/model-gateway/readiness`
 - `GET /v1/market/research-posture`
@@ -51,3 +52,7 @@ infrastructure mutation.
 `GET /v1/model-gateway/readiness` performs health-only readbacks against the
 configured local model gateways. It does not send prompts, start training, read
 secrets, or mutate runtimes.
+
+`GET /v1/evidence-ledger` turns the landscape catalog into stable, hash-addressed
+evidence records. It stores links, source ids, rights metadata, summaries, and
+hashes; it does not store raw private payloads.
