@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { AOE_ADAPTER_READINESS_SCHEMA_ID } from "./adapters/aoe.js";
 import { EVIDENCE_LEDGER_SCHEMA_ID, buildEvidenceLedger } from "./evidence.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -81,6 +82,7 @@ export function buildWellKnown(origin: string) {
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
       evidenceLedger: "/v1/evidence-ledger",
+      aoeReadiness: "/v1/adapters/aoe/readiness",
       modelGateway: "/v1/model-gateway",
       modelGatewayReadiness: "/v1/model-gateway/readiness",
       marketResearchPosture: "/v1/market/research-posture",
@@ -90,6 +92,7 @@ export function buildWellKnown(origin: string) {
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
       evidenceLedger: EVIDENCE_LEDGER_SCHEMA_ID,
+      aoeReadiness: AOE_ADAPTER_READINESS_SCHEMA_ID,
       modelGateway: MODEL_GATEWAY_SCHEMA_ID,
       modelGatewayReadiness: MODEL_GATEWAY_READINESS_SCHEMA_ID,
       marketResearchPosture: MARKET_RESEARCH_SCHEMA_ID,

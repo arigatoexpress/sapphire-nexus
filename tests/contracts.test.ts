@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { checkAoeReadiness } from "../src/adapters/aoe.js";
 import {
   buildHealth,
   buildLandscapeEvidenceLedger,
@@ -30,6 +31,7 @@ describe("Sapphire Nexus contracts", () => {
 
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
+    expect(wellKnown.schemaIds.aoeReadiness).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
     expect(wellKnown.schemaIds.modelGateway).toBe("sapphire.nexus.model_gateway.v1");
     expect(wellKnown.schemaIds.modelGatewayReadiness).toBe("sapphire.nexus.model_gateway_readiness.v1");
     expect(wellKnown.routes.marketResearchPosture).toBe("/v1/market/research-posture");
@@ -54,6 +56,77 @@ describe("Sapphire Nexus contracts", () => {
     expect(ledger.summary.byKind["owned-repo"]).toBeGreaterThan(3);
     expect(ledger.records[0].evidenceHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(ledger.records.some((record) => record.sourceId === "arigatoexpress/Sapphire")).toBe(true);
+  });
+
+  test("AOE adapter summarizes public contracts without storing raw bundles", async () => {
+    const fakeFetch = async (url: string | URL | Request) => {
+      const value = String(url);
+      if (value.endsWith("/health")) {
+        return Response.json({
+          status: "ok",
+          service: "agent-opportunity-exchange",
+          liveSettlementAllowed: false,
+          externalSideEffectsAllowed: false,
+        });
+      }
+      if (value.endsWith("/.well-known/agent-opportunity-exchange.json")) {
+        return Response.json({
+          schemaId: "aoe.discovery.v1",
+          service: "agent-opportunity-exchange",
+          routes: { readiness: "/v1/readiness", contracts: "/v1/contracts" },
+          schemaIds: { readiness: "aoe.readiness.v1", contractBundle: "aoe.contract_bundle.v1" },
+          freeEndpoints: ["/health", "/v1/readiness", "/v1/contracts"],
+        });
+      }
+      if (value.endsWith("/v1/readiness")) {
+        return Response.json({
+          schemaId: "aoe.readiness.v1",
+          liveSettlementAllowed: false,
+          externalSideEffectsAllowed: false,
+          adapters: [{ adapterId: "demo" }],
+          counts: { live_read_only: 9, key_required: 1 },
+          contracts: {
+            buyerDiscoveryReady: true,
+            routeSchemasCovered: true,
+            productSchemasCovered: true,
+          },
+        });
+      }
+      return Response.json({
+        schemaId: "aoe.contract_bundle.v1",
+        bundleVersion: "2026-05-10",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+        pathContracts: [{ path: "/v1/readiness" }, { path: "/v1/contracts" }],
+        schemaCatalog: { one: {}, two: {} },
+        coverage: { buyerDiscoveryReady: true },
+        paymentBoundary: {
+          liveSettlementAllowed: false,
+          mainnetAllowed: false,
+          acceptedTestnet: "eip155:84532",
+          serverPrivateKeyRequired: false,
+        },
+      });
+    };
+
+    const report = await checkAoeReadiness({
+      baseUrl: "http://127.0.0.1:4402/",
+      fetchImpl: fakeFetch as typeof fetch,
+      now: new Date("2026-05-22T17:23:00.000-06:00"),
+    });
+
+    expect(report.schemaId).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
+    expect(report.adapter.baseUrl).toBe("http://127.0.0.1:4402");
+    expect(report.summary).toEqual({ endpoints: 4, ready: 4, degraded: 0, status: "ready" });
+    expect(report.safety.storesRawContractBundle).toBe(false);
+    expect(report.safety.paymentSettlementAllowed).toBe(false);
+    expect(report.endpoints.find((endpoint) => endpoint.id === "contracts")?.summary).toEqual(
+      expect.objectContaining({
+        schemaId: "aoe.contract_bundle.v1",
+        pathContractCount: 2,
+        schemaCatalogCount: 2,
+      }),
+    );
   });
 
   test("model gateway exposes Ollama and Windows GPU as contracts only", () => {

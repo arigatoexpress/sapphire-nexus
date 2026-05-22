@@ -32,6 +32,12 @@ describe("Sapphire Nexus API", () => {
     expect(ledger.schemaId).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(ledger.safety.rawPayloadsStored).toBe(false);
 
+    const aoeRes = await app.request("/v1/adapters/aoe/readiness");
+    expect(aoeRes.status).toBe(200);
+    const aoe = await aoeRes.json();
+    expect(aoe.schemaId).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
+    expect(aoe.safety.paymentSettlementAllowed).toBe(false);
+
     const marketRes = await app.request("/v1/market/research-posture");
     expect(marketRes.status).toBe(200);
     const market = await marketRes.json();
