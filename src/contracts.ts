@@ -13,6 +13,7 @@ export const HEALTH_SCHEMA_ID = "sapphire.nexus.health.v1";
 export const WELL_KNOWN_SCHEMA_ID = "sapphire.nexus.discovery.v1";
 export const THESIS_SCHEMA_ID = "sapphire.nexus.thesis.v1";
 export const LANDSCAPE_SCHEMA_ID = "sapphire.nexus.landscape.v1";
+export const NEXUS_READINESS_SCHEMA_ID = "sapphire.nexus.readiness.v1";
 export const MODEL_GATEWAY_SCHEMA_ID = "sapphire.nexus.model_gateway.v1";
 export const MODEL_GATEWAY_READINESS_SCHEMA_ID = "sapphire.nexus.model_gateway_readiness.v1";
 export const MODEL_PROMPT_SMOKE_SCHEMA_ID = "sapphire.nexus.model_prompt_smoke.v1";
@@ -85,6 +86,7 @@ export function buildWellKnown(origin: string) {
       health: "/health",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
+      readiness: "/v1/readiness",
       evidenceLedger: "/v1/evidence-ledger",
       aoeReadiness: "/v1/adapters/aoe/readiness",
       agentRuntimePublication: "/v1/adapters/agent-runtime/publication",
@@ -97,6 +99,7 @@ export function buildWellKnown(origin: string) {
       health: HEALTH_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
+      readiness: NEXUS_READINESS_SCHEMA_ID,
       evidenceLedger: EVIDENCE_LEDGER_SCHEMA_ID,
       aoeReadiness: AOE_ADAPTER_READINESS_SCHEMA_ID,
       agentRuntimePublication: AGENT_RUNTIME_PUBLICATION_ADAPTER_SCHEMA_ID,

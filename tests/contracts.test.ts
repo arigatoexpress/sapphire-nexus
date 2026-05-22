@@ -12,6 +12,7 @@ import {
   buildWellKnown,
   loadLandscape,
 } from "../src/contracts.js";
+import { checkNexusReadiness } from "../src/readiness.js";
 
 describe("Sapphire Nexus contracts", () => {
   test("landscape stores derived links and protected boundaries", () => {
@@ -33,6 +34,8 @@ describe("Sapphire Nexus contracts", () => {
 
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
+    expect(wellKnown.routes.readiness).toBe("/v1/readiness");
+    expect(wellKnown.schemaIds.readiness).toBe("sapphire.nexus.readiness.v1");
     expect(wellKnown.schemaIds.aoeReadiness).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
     expect(wellKnown.schemaIds.agentRuntimePublication).toBe("sapphire.nexus.adapter.agent_runtime_publication.v1");
     expect(wellKnown.schemaIds.modelGateway).toBe("sapphire.nexus.model_gateway.v1");
@@ -281,6 +284,50 @@ describe("Sapphire Nexus contracts", () => {
     expect(report.safety.storesCompletions).toBe(false);
     expect(JSON.stringify(report)).not.toContain("Return exactly");
     expect(JSON.stringify(report)).not.toContain("NEXUS_OK");
+  });
+
+  test("nexus readiness rolls up probes without exposing raw payloads", async () => {
+    const report = await checkNexusReadiness({
+      now: new Date("2026-05-22T17:42:00.000-06:00"),
+      probes: {
+        health: () => ({ status: "ok", liveActionsEnabled: false }),
+        evidenceLedger: () => ({
+          safety: { rawPayloadsStored: false },
+          summary: { records: 41 },
+          rawPayload: "PRIVATE_SAMPLE",
+        }),
+        modelGateway: () => ({ summary: { gateways: 2, ready: 2, degraded: 0 } }),
+        modelPromptSmoke: () => ({
+          summary: { status: "disabled", ready: false, reason: "not enabled" },
+          safety: { sendsUserPrompts: false, storesPrompts: false, storesCompletions: false },
+        }),
+        aoe: () => ({ summary: { status: "ready", endpoints: 4, ready: 4, degraded: 0 } }),
+        agentRuntime: () => ({
+          summary: {
+            status: "ready",
+            publicExportBlocked: false,
+            trackedSourceReady: true,
+            secretViolationCount: 0,
+            ignoredGeneratedOutputCount: 5,
+          },
+        }),
+      },
+    });
+
+    expect(report.schemaId).toBe("sapphire.nexus.readiness.v1");
+    expect(report.status).toBe("ready");
+    expect(report.summary).toEqual({ checks: 6, ready: 5, degraded: 0, disabled: 1, productionUsable: true });
+    expect(report.safety.liveActionsEnabled).toBe(false);
+    expect(report.checks.map((check) => check.id)).toEqual([
+      "health",
+      "evidenceLedger",
+      "modelGateway",
+      "modelPromptSmoke",
+      "aoe",
+      "agentRuntime",
+    ]);
+    expect(report.checks.find((check) => check.id === "modelPromptSmoke")?.status).toBe("disabled");
+    expect(JSON.stringify(report)).not.toContain("PRIVATE_SAMPLE");
   });
 
   test("market posture is research-only and blocks execution language", () => {

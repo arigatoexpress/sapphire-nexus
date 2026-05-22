@@ -13,6 +13,7 @@ import {
   loadLandscape,
   publicOrigin,
 } from "./contracts.js";
+import { checkNexusReadiness } from "./readiness.js";
 import { renderWorkbench } from "./workbench.js";
 
 export function createApp() {
@@ -30,6 +31,7 @@ export function createApp() {
   app.get("/.well-known/sapphire-nexus.json", (c) => c.json(buildWellKnown(publicOrigin(c.req.raw))));
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
+  app.get("/v1/readiness", async (c) => c.json(await checkNexusReadiness()));
   app.get("/v1/evidence-ledger", (c) => c.json(buildLandscapeEvidenceLedger()));
   app.get("/v1/adapters/aoe/readiness", async (c) => c.json(await checkAoeReadiness()));
   app.get("/v1/adapters/agent-runtime/publication", async (c) => c.json(await checkAgentRuntimePublication()));
