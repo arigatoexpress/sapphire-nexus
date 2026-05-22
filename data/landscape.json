@@ -1,0 +1,242 @@
+{
+  "schemaId": "sapphire.nexus.landscape.v1",
+  "generatedAt": "2026-05-22T17:10:00.000-06:00",
+  "method": "Derived from Ari-owned GitHub metadata, starred repositories, GitHub top-star search, and GitHub trending readbacks. This catalog stores links and summaries only.",
+  "principles": [
+    "Keep purpose-built products separate and consume them through contracts.",
+    "Use local-first inference by default, with cloud as an explicit deploy lane.",
+    "Sell or ship derived analysis, provenance, and workflows rather than raw scraped payloads.",
+    "Keep trading and market systems research-only until manual approval opens a live lane."
+  ],
+  "ownedRepoSignals": [
+    {
+      "repo": "arigatoexpress/Sapphire",
+      "role": "legacy command center and pattern mine",
+      "mine": ["public/admin boundary patterns", "runtime readiness probes", "safety runbooks"],
+      "avoid": ["large coupled dashboards", "scattered runtime ownership", "live action ambiguity"]
+    },
+    {
+      "repo": "arigatoexpress/agent-opportunity-exchange",
+      "role": "paid artifact and x402 contract source",
+      "mine": ["Hono API simplicity", "well-known discovery", "preview-safety contracts", "sellability scorecards"],
+      "avoid": ["turning the broker into a general runtime control plane"]
+    },
+    {
+      "repo": "arigatoexpress/agent-runtime-control-plane",
+      "role": "runtime inventory and publication policy source",
+      "mine": ["publication audit", "repo/runtime inventory", "Telegram dry-run contracts"],
+      "avoid": ["absorbing product-specific data or old generated inventory snapshots"]
+    },
+    {
+      "repo": "arigatoexpress/OpenBB",
+      "role": "finance data platform reference",
+      "mine": ["provider abstraction ideas", "analyst terminal ergonomics"],
+      "avoid": ["vendoring a fork instead of consuming upstream packages/contracts"]
+    },
+    {
+      "repo": "arigatoexpress/tradingview-autonomous-manager",
+      "role": "TradingView integration pattern mine",
+      "mine": ["Pine/webhook/operator integration patterns", "paper-only alert contract ideas"],
+      "avoid": ["CDP fragility", "live execution coupling", "exchange-key risk"]
+    },
+    {
+      "repo": "arigatoexpress/cyber-threat-bot",
+      "role": "defensive cyber adapter source",
+      "mine": ["public-source models", "actionability scoring", "OpenAPI contract shape"],
+      "avoid": ["offensive scanning or credential-adjacent behavior"]
+    },
+    {
+      "repo": "arigatoexpress/Kronos",
+      "role": "financial-market model reference",
+      "mine": ["time-series model ideas and benchmark posture"],
+      "avoid": ["claiming predictive trading readiness without reproducible evaluation"]
+    },
+    {
+      "repo": "arigatoexpress/market-atlas-ai",
+      "role": "crypto scorecard source material",
+      "mine": ["market research pipeline concepts", "scorecard language"],
+      "avoid": ["execution coupling or unverified signal claims"]
+    },
+    {
+      "repo": "arigatoexpress/AI-Benchmark",
+      "role": "local model benchmark reference",
+      "mine": ["GPU/model benchmark harness concepts"],
+      "avoid": ["hardware-specific assumptions without gateway contracts"]
+    }
+  ],
+  "openSourceShortlist": [
+    {
+      "repo": "ollama/ollama",
+      "category": "local model serving",
+      "stars": 172044,
+      "license": "MIT",
+      "fit": "Default local model gateway for Mac today and Windows GPU later."
+    },
+    {
+      "repo": "vllm-project/vllm",
+      "category": "high-throughput model serving",
+      "stars": 80747,
+      "license": "Apache-2.0",
+      "fit": "Candidate Windows or Linux GPU serving path when Ollama is not enough."
+    },
+    {
+      "repo": "sgl-project/sglang",
+      "category": "high-throughput model serving",
+      "stars": 28127,
+      "license": "Apache-2.0",
+      "fit": "Alternative OpenAI-compatible GPU serving path for the Windows AI node."
+    },
+    {
+      "repo": "qdrant/qdrant",
+      "category": "vector database",
+      "stars": 27800,
+      "license": "Apache-2.0",
+      "fit": "Durable vector service candidate for evidence and research memory."
+    },
+    {
+      "repo": "lancedb/lancedb",
+      "category": "embedded vector store",
+      "stars": 8800,
+      "license": "Apache-2.0",
+      "fit": "Embedded local research indexes without always running a service."
+    },
+    {
+      "repo": "langchain-ai/langgraph",
+      "category": "stateful agent workflows",
+      "stars": 51600,
+      "license": "MIT",
+      "fit": "Reference for durable agent state machines; keep Nexus adapters thin."
+    },
+    {
+      "repo": "pydantic/pydantic-ai",
+      "category": "typed agent contracts",
+      "stars": 12800,
+      "license": "MIT",
+      "fit": "Good Python-side typed tool contract reference for future adapters."
+    },
+    {
+      "repo": "dagster-io/dagster",
+      "category": "data workflow orchestration",
+      "stars": 15000,
+      "license": "Apache-2.0",
+      "fit": "Candidate for repeatable ingest, backtest, eval, and report assets."
+    },
+    {
+      "repo": "mlflow/mlflow",
+      "category": "experiment tracking",
+      "stars": 25400,
+      "license": "Apache-2.0",
+      "fit": "Run registry for LLM evals, model experiments, and quant research."
+    },
+    {
+      "repo": "open-webui/open-webui",
+      "category": "local AI workbench reference",
+      "stars": 138266,
+      "license": "BSD-3-Clause",
+      "fit": "Reference for local model UX, not a component to copy into the core."
+    },
+    {
+      "repo": "langgenius/dify",
+      "category": "agent workflow platform",
+      "stars": 142280,
+      "license": "Apache-2.0",
+      "fit": "Reference for workflow concepts; keep Nexus smaller and code-first."
+    },
+    {
+      "repo": "humanlayer/12-factor-agents",
+      "category": "agent production principles",
+      "stars": 21719,
+      "license": "MIT",
+      "fit": "Design reference for reliable agent loops and explicit state."
+    },
+    {
+      "repo": "OpenBB-finance/OpenBB",
+      "category": "financial data platform",
+      "stars": 67946,
+      "license": "AGPL-3.0",
+      "fit": "Provider and terminal reference; AGPL makes vendoring unattractive."
+    },
+    {
+      "repo": "microsoft/qlib",
+      "category": "AI quant research",
+      "stars": 43350,
+      "license": "MIT",
+      "fit": "Research/backtest lab reference for reproducible quant experiments."
+    },
+    {
+      "repo": "QuantConnect/Lean",
+      "category": "serious backtesting engine",
+      "stars": 11000,
+      "license": "Apache-2.0",
+      "fit": "Candidate for heavy paper-only strategy research, not live execution."
+    },
+    {
+      "repo": "ccxt/ccxt",
+      "category": "market data connector",
+      "stars": 38400,
+      "license": "MIT",
+      "fit": "Read-only crypto exchange data adapter with strict key and execution gates."
+    },
+    {
+      "repo": "freqtrade/freqtrade",
+      "category": "crypto trading bot",
+      "stars": 50641,
+      "license": "GPL-3.0",
+      "fit": "Backtesting and dry-run reference only; do not couple live execution."
+    },
+    {
+      "repo": "polakowo/vectorbt",
+      "category": "fast backtesting",
+      "stars": 7654,
+      "license": "Apache-2.0",
+      "fit": "Good candidate for offline research adapters."
+    }
+  ],
+  "trendingSignals": [
+    {
+      "repo": "tinyhumansai/openhuman",
+      "starsThisWeek": 17399,
+      "fit": "Private personal AI is the zeitgeist; Nexus should be local-first and personal."
+    },
+    {
+      "repo": "rohitg00/agentmemory",
+      "starsThisWeek": 7000,
+      "fit": "Memory systems are high-leverage, but Nexus should store explicit evidence and receipts, not unbounded chat history."
+    },
+    {
+      "repo": "humanlayer/12-factor-agents",
+      "starsThisWeek": 1729,
+      "fit": "Production-grade agent discipline belongs in the architecture."
+    }
+  ],
+  "notCore": [
+    {
+      "repo": "langgenius/dify",
+      "reason": "Useful workflow reference, but too heavy and platform-like for the core nucleus."
+    },
+    {
+      "repo": "FlowiseAI/Flowise",
+      "reason": "Good visual-agent reference, but low-code graphs can become the product instead of supporting it."
+    },
+    {
+      "repo": "n8n-io/n8n",
+      "reason": "Workflow automation is useful as an adapter boundary, not the core app."
+    },
+    {
+      "repo": "open-webui/open-webui",
+      "reason": "Strong local AI UX reference, but Nexus needs its own evidence and market-research contracts."
+    },
+    {
+      "repo": "freqtrade/freqtrade",
+      "reason": "Live execution gravity and GPL friction make it reference-only for backtesting ideas."
+    }
+  ],
+  "protectedLanes": [
+    "THO / Project-Go-Forward",
+    "0guard",
+    "wildfire-watch",
+    "regional-intel-workbench",
+    "hackathon submissions",
+    "production cloud data and DNS"
+  ]
+}
