@@ -13,6 +13,7 @@ import {
   loadLandscape,
 } from "../src/contracts.js";
 import { checkNexusReadiness } from "../src/readiness.js";
+import { resolveServerConfig } from "../src/server-config.js";
 
 describe("Sapphire Nexus contracts", () => {
   test("landscape stores derived links and protected boundaries", () => {
@@ -408,5 +409,10 @@ describe("Sapphire Nexus contracts", () => {
     expect(posture.mode).toBe("research_only");
     expect(posture.liveTradingAllowed).toBe(false);
     expect(posture.blockedOutputs).toContain("buy/sell/hold advice");
+  });
+
+  test("server config binds to Cloud Run host and port when deployed", () => {
+    expect(resolveServerConfig({ PORT: "8080", K_SERVICE: "sapphire-nexus" })).toEqual({ host: "0.0.0.0", port: 8080 });
+    expect(resolveServerConfig({})).toEqual({ host: "127.0.0.1", port: 4420 });
   });
 });

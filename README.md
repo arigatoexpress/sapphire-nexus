@@ -49,6 +49,11 @@ After deploy, run:
 npm run smoke:production -- https://your-deployment-url
 ```
 
+For Cloud Run, the app uses `PORT` and binds to `0.0.0.0` when `K_SERVICE` is
+present. The checked-in `Dockerfile` sets `SAPPHIRE_NEXUS_PUBLIC_MODE=true` so
+the service exposes the public workbench and contracts without probing private
+local infrastructure.
+
 ## Core Routes
 
 - `GET /`
