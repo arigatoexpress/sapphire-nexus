@@ -10,6 +10,9 @@ describe("Sapphire Nexus API", () => {
     const html = await res.text();
     expect(html).toContain("Sapphire Nexus");
     expect(html).toContain("live actions disabled");
+    expect(html).toContain("Readiness");
+    expect(html).toContain("summary-only");
+    expect(html).toContain("Local prompt smoke");
     expect(html).toContain("Open Source Shortlist");
     expect(html).toContain("Reference Only");
   });
