@@ -8,6 +8,7 @@
     "dev": "tsx src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc -p tsconfig.build.json",
+    "smoke:production": "node scripts/production-smoke.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "verify": "npm run typecheck && npm test && npm run build"
@@ -27,4 +28,3 @@
     "node": ">=22"
   }
 }
-

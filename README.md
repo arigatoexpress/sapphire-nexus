@@ -31,6 +31,24 @@ npm run dev
 
 Default URL: `http://127.0.0.1:4420`.
 
+## Production
+
+The public deployment entrypoint is `api/index.ts`, with Vercel routing all
+paths through the Hono app. Public deployments should set
+`SAPPHIRE_NEXUS_PUBLIC_MODE=true`; Vercel also sets `VERCEL=1`, which activates
+the same public-safe behavior automatically.
+
+Public mode disables private local adapter probes for Ollama, Windows GPU, AOE,
+and agent-runtime-control-plane. The deployed workbench still renders the
+readiness rollup, but local-only checks are marked `disabled` instead of trying
+to reach private infrastructure from production.
+
+After deploy, run:
+
+```bash
+npm run smoke:production -- https://your-deployment-url
+```
+
 ## Core Routes
 
 - `GET /`

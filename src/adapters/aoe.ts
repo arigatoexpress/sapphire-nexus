@@ -1,3 +1,5 @@
+import { isPublicDeployment, publicDeploymentReason } from "../deployment.js";
+
 export const AOE_ADAPTER_READINESS_SCHEMA_ID = "sapphire.nexus.adapter.aoe_readiness.v1";
 
 type EndpointId = "health" | "discovery" | "readiness" | "contracts";
@@ -11,13 +13,19 @@ const AOE_ENDPOINTS: Array<{ id: EndpointId; path: string }> = [
 
 export async function checkAoeReadiness(options: {
   baseUrl?: string;
+  env?: NodeJS.ProcessEnv;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   now?: Date;
 } = {}) {
-  const baseUrl = normalizeBaseUrl(options.baseUrl ?? process.env.SAPPHIRE_NEXUS_AOE_URL ?? "http://127.0.0.1:4402");
+  const env = options.env ?? process.env;
+  const baseUrl = normalizeBaseUrl(options.baseUrl ?? env.SAPPHIRE_NEXUS_AOE_URL ?? "http://127.0.0.1:4402");
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 1_500;
+  if (isPublicDeployment(env)) {
+    return buildDisabledReport(baseUrl, options.now);
+  }
+
   const endpointResults = await Promise.all(
     AOE_ENDPOINTS.map(async (endpoint) => {
       const url = `${baseUrl}${endpoint.path}`;
@@ -74,6 +82,44 @@ export async function checkAoeReadiness(options: {
       status: readyCount === endpointResults.length ? "ready" : readyCount > 0 ? "degraded" : "unreachable",
     },
     endpoints: endpointResults,
+  };
+}
+
+function buildDisabledReport(baseUrl: string, now: Date | undefined) {
+  return {
+    schemaId: AOE_ADAPTER_READINESS_SCHEMA_ID,
+    generatedAt: (now ?? new Date()).toISOString(),
+    adapter: {
+      id: "agent-opportunity-exchange",
+      baseUrl,
+      mode: "read_only_public_contract_summary",
+      sourceRepo: "arigatoexpress/agent-opportunity-exchange",
+    },
+    safety: {
+      readsSecrets: false,
+      sendsPrompts: false,
+      liveTradingAllowed: false,
+      paymentSettlementAllowed: false,
+      walletSigningAllowed: false,
+      telegramSendsAllowed: false,
+      storesRawContractBundle: false,
+    },
+    summary: {
+      endpoints: AOE_ENDPOINTS.length,
+      ready: 0,
+      degraded: 0,
+      disabled: AOE_ENDPOINTS.length,
+      status: "disabled",
+      reason: publicDeploymentReason(),
+    },
+    endpoints: AOE_ENDPOINTS.map((endpoint) => ({
+      id: endpoint.id,
+      path: endpoint.path,
+      status: "disabled",
+      statusCode: null,
+      durationMs: 0,
+      summary: { reason: publicDeploymentReason() },
+    })),
   };
 }
 
@@ -173,4 +219,3 @@ function stringValue(value: unknown) {
 function booleanValue(value: unknown) {
   return typeof value === "boolean" ? value : null;
 }
-

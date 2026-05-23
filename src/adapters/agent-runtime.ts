@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { isPublicDeployment, publicDeploymentReason } from "../deployment.js";
 
 export const AGENT_RUNTIME_PUBLICATION_ADAPTER_SCHEMA_ID = "sapphire.nexus.adapter.agent_runtime_publication.v1";
 
@@ -10,11 +11,16 @@ type CommandRunner = (cwd: string) => Promise<{ stdout: string }>;
 
 export async function checkAgentRuntimePublication(options: {
   repoRoot?: string;
+  env?: NodeJS.ProcessEnv;
   commandRunner?: CommandRunner;
   now?: Date;
 } = {}) {
-  const repoRoot = options.repoRoot ?? process.env.SAPPHIRE_NEXUS_AGENT_RUNTIME_ROOT ?? DEFAULT_AGENT_RUNTIME_ROOT;
+  const env = options.env ?? process.env;
+  const repoRoot = options.repoRoot ?? env.SAPPHIRE_NEXUS_AGENT_RUNTIME_ROOT ?? DEFAULT_AGENT_RUNTIME_ROOT;
   const runCommand = options.commandRunner ?? runPublicationPlan;
+  if (isPublicDeployment(env)) {
+    return buildDisabledReport(repoRoot, options.now);
+  }
 
   try {
     const result = await runCommand(repoRoot);
@@ -113,6 +119,50 @@ export async function checkAgentRuntimePublication(options: {
       error: error instanceof Error ? error.message : "unknown_error",
     };
   }
+}
+
+function buildDisabledReport(repoRoot: string, now: Date | undefined) {
+  return {
+    schemaId: AGENT_RUNTIME_PUBLICATION_ADAPTER_SCHEMA_ID,
+    generatedAt: (now ?? new Date()).toISOString(),
+    adapter: {
+      id: "agent-runtime-control-plane",
+      repoRoot,
+      sourceRepo: "arigatoexpress/agent-runtime-control-plane",
+      mode: "read_only_publication_plan_summary",
+    },
+    safety: {
+      readsSecrets: false,
+      mutatesRuntime: false,
+      publishesRepo: false,
+      generatedDataContentRead: false,
+      storesGeneratedPayloads: false,
+      broadensPermissions: false,
+    },
+    summary: {
+      status: "disabled",
+      publicExportBlocked: null,
+      trackedSourceReady: null,
+      auditViolationCount: null,
+      generatedTrackedViolationCount: null,
+      secretViolationCount: null,
+      ignoredGeneratedOutputCount: null,
+      ignoredGeneratedOutputBytes: null,
+      reason: publicDeploymentReason(),
+    },
+    repository: {
+      packagePrivate: null,
+      remote: null,
+      visibilityCheck: null,
+    },
+    exportPolicy: {
+      requiresHumanApprovalBeforePublicVisibilityChange: true,
+      includeCount: 0,
+      excludeCount: 0,
+    },
+    generatedOutputs: [],
+    violationCount: null,
+  };
 }
 
 async function runPublicationPlan(cwd: string) {
