@@ -22,7 +22,8 @@ const checks = [
       body.origin === expectedOrigin &&
       body.routes?.readiness === "/v1/readiness" &&
       body.routes?.deployment === "/v1/deployment" &&
-      body.routes?.openApi === "/openapi.json",
+      body.routes?.openApi === "/openapi.json" &&
+      body.routes?.operatorNextActions === "/v1/operator/next-actions",
   },
   {
     id: "openapi",
@@ -31,6 +32,7 @@ const checks = [
       body.openapi === "3.1.0" &&
       body.servers?.[0]?.url === expectedOrigin &&
       body.paths?.["/v1/readiness"]?.get?.operationId === "readiness" &&
+      body.paths?.["/v1/operator/next-actions"]?.get?.operationId === "operatorNextActions" &&
       body["x-sapphire-nexus"]?.liveActionsEnabled === false,
   },
   {
@@ -59,6 +61,15 @@ const checks = [
       body.safety?.rawPayloadsStored === false,
   },
   {
+    id: "operatorNextActions",
+    path: "/v1/operator/next-actions",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.operator_next_actions.v1" &&
+      body.summary?.agentSafe === 2 &&
+      body.summary?.ariDecision === 2 &&
+      body.safety?.mutatesRuntime === false,
+  },
+  {
     id: "workbench",
     path: "/",
     validateText: (text) =>
@@ -66,7 +77,9 @@ const checks = [
       text.includes("Readiness") &&
       text.includes("Deployment Identity") &&
       text.includes("API Surface") &&
-      text.includes("/openapi.json"),
+      text.includes("/openapi.json") &&
+      text.includes("Next Actions") &&
+      text.includes("/v1/operator/next-actions"),
   },
   {
     id: "llms",

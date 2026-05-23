@@ -1,5 +1,5 @@
 import type { Landscape } from "./contracts.js";
-import { buildSafetyBoundary } from "./contracts.js";
+import { buildOperatorNextActions, buildSafetyBoundary } from "./contracts.js";
 import type { buildDeploymentIdentity } from "./deployment.js";
 import type { checkNexusReadiness } from "./readiness.js";
 
@@ -11,12 +11,14 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
   const reusable = landscape.ownedRepoSignals.filter((repo) => !repo.repo.includes("0guard") && !repo.repo.includes("wildfire"));
   const topOpenSource = landscape.openSourceShortlist.slice(0, 6);
   const readinessTone = readiness.status === "ready" ? "ready" : "degraded";
+  const nextActions = buildOperatorNextActions();
   const apiLinks = [
     { label: "OpenAPI", path: "/openapi.json", detail: "client contract" },
     { label: "Discovery", path: "/.well-known/sapphire-nexus.json", detail: "route map" },
     { label: "Readiness", path: "/v1/readiness", detail: "operator status" },
     { label: "Deployment", path: "/v1/deployment", detail: "live revision" },
     { label: "Public Sources", path: "/v1/adapters/public-sources/readiness", detail: "rights posture" },
+    { label: "Next Actions", path: "/v1/operator/next-actions", detail: "operator queue" },
     { label: "LLMs", path: "/llms.txt", detail: "AI-readable guide" },
   ];
 
@@ -194,6 +196,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
       min-height: 44px;
     }
     .check-name { min-width: 0; color: #dce5f2; font-size: 13px; }
+    .check-detail { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.35; }
     .badge {
       display: inline-flex;
       align-items: center;
@@ -309,6 +312,19 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
               .map(
                 (link) =>
                   `<a class="route-link" href="${escapeHtml(link.path)}"><span><span class="route-title">${escapeHtml(link.label)}</span><span class="route-path">${escapeHtml(link.path)}</span></span><span class="route-detail">${escapeHtml(link.detail)}</span></a>`,
+              )
+              .join("")}
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="section-head"><h2>Next Actions</h2><span class="subtle">agent-safe vs Ari-only</span></div>
+        <div class="body">
+          <div class="check-list">
+            ${nextActions.actions
+              .map(
+                (action) =>
+                  `<div class="check"><div><div class="check-name">${escapeHtml(action.label)}</div><div class="check-detail">${escapeHtml(action.lane)} · ${escapeHtml(action.reason)}</div></div><span class="badge ${escapeHtml(action.status)}">${escapeHtml(action.status)}</span></div>`,
               )
               .join("")}
           </div>

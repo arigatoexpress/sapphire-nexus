@@ -6,6 +6,7 @@ import {
   buildHealth,
   buildMarketResearchPosture,
   buildModelGateway,
+  buildOperatorNextActions,
   buildLandscapeEvidenceLedger,
   checkModelGatewayReadiness,
   checkModelPromptSmoke,
@@ -69,6 +70,7 @@ export function createApp() {
   app.get("/v1/model-gateway/readiness", async (c) => c.json(await checkModelGatewayReadiness()));
   app.get("/v1/model-gateway/prompt-smoke", async (c) => c.json(await checkModelPromptSmoke()));
   app.get("/v1/market/research-posture", (c) => c.json(buildMarketResearchPosture()));
+  app.get("/v1/operator/next-actions", (c) => c.json(buildOperatorNextActions()));
 
   return app;
 }

@@ -19,6 +19,7 @@ export const MODEL_GATEWAY_SCHEMA_ID = "sapphire.nexus.model_gateway.v1";
 export const MODEL_GATEWAY_READINESS_SCHEMA_ID = "sapphire.nexus.model_gateway_readiness.v1";
 export const MODEL_PROMPT_SMOKE_SCHEMA_ID = "sapphire.nexus.model_prompt_smoke.v1";
 export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture.v1";
+export const OPERATOR_NEXT_ACTIONS_SCHEMA_ID = "sapphire.nexus.operator_next_actions.v1";
 const FIXED_PROMPT_SMOKE_PROMPT = "Return exactly the token NEXUS_OK.";
 
 const LandscapeSchema = z.object({
@@ -100,6 +101,7 @@ export function buildWellKnown(origin: string) {
       modelGatewayReadiness: "/v1/model-gateway/readiness",
       modelPromptSmoke: "/v1/model-gateway/prompt-smoke",
       marketResearchPosture: "/v1/market/research-posture",
+      operatorNextActions: "/v1/operator/next-actions",
     },
     schemaIds: {
       health: HEALTH_SCHEMA_ID,
@@ -116,6 +118,7 @@ export function buildWellKnown(origin: string) {
       modelGatewayReadiness: MODEL_GATEWAY_READINESS_SCHEMA_ID,
       modelPromptSmoke: MODEL_PROMPT_SMOKE_SCHEMA_ID,
       marketResearchPosture: MARKET_RESEARCH_SCHEMA_ID,
+      operatorNextActions: OPERATOR_NEXT_ACTIONS_SCHEMA_ID,
     },
     safety: buildSafetyBoundary(),
   };
@@ -143,6 +146,73 @@ export function buildThesis(landscape = loadLandscape()) {
       "operator workbench",
     ],
     blockedClaims: buildBlockedClaims(),
+  };
+}
+
+export function buildOperatorNextActions(now = new Date()) {
+  const actions = [
+    {
+      id: "verify-live-surface",
+      lane: "agent-safe",
+      label: "Verify the live Cloud Run URL before production claims",
+      status: "ready",
+      route: "/v1/deployment",
+      approvalRequired: false,
+      reason: "Revision identity and smoke checks already exist and are safe to rerun.",
+    },
+    {
+      id: "rights-cleared-adapter",
+      lane: "agent-safe",
+      label: "Add the next rights-cleared adapter from explicit public metadata",
+      status: "candidate",
+      route: "/v1/adapters/public-sources/readiness",
+      approvalRequired: false,
+      reason: "Only derived summaries, links, hashes, and checked-in metadata are allowed.",
+    },
+    {
+      id: "custom-domain-choice",
+      lane: "ari-only",
+      label: "Choose DNS/domain before custom domain setup",
+      status: "blocked",
+      route: null,
+      approvalRequired: true,
+      reason: "Domain mapping changes DNS and should wait for Ari's named domain choice.",
+    },
+    {
+      id: "deploy-promotion-policy",
+      lane: "ari-only",
+      label: "Choose manual versus auto-promote deploy workflow",
+      status: "blocked",
+      route: null,
+      approvalRequired: true,
+      reason: "Automation should not change production promotion policy without an explicit decision.",
+    },
+  ];
+
+  return {
+    schemaId: OPERATOR_NEXT_ACTIONS_SCHEMA_ID,
+    generatedAt: now.toISOString(),
+    summary: {
+      actions: actions.length,
+      agentSafe: actions.filter((action) => action.lane === "agent-safe").length,
+      ariDecision: actions.filter((action) => action.approvalRequired).length,
+      blocked: actions.filter((action) => action.status === "blocked").length,
+      liveActionsEnabled: false,
+    },
+    actions,
+    safety: {
+      ...buildSafetyBoundary(),
+      readsSecrets: false,
+      mutatesRuntime: false,
+      sendsExternalMessages: false,
+      storesRawPayloads: false,
+    },
+    policy: {
+      publicSafe: true,
+      reversibleCodeChangesOnly: true,
+      requiresVerificationBeforeProductionClaims: true,
+      ariDecisionRequiredForDomainOrPromotionPolicy: true,
+    },
   };
 }
 
