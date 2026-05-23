@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { checkAoeReadiness } from "../src/adapters/aoe.js";
 import { checkAgentRuntimePublication } from "../src/adapters/agent-runtime.js";
+import { buildPublicSourcesReadiness } from "../src/adapters/public-sources.js";
 import {
   buildHealth,
   buildLandscapeEvidenceLedger,
@@ -37,6 +38,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(wellKnown.routes.readiness).toBe("/v1/readiness");
     expect(wellKnown.schemaIds.readiness).toBe("sapphire.nexus.readiness.v1");
+    expect(wellKnown.routes.publicSourcesReadiness).toBe("/v1/adapters/public-sources/readiness");
+    expect(wellKnown.schemaIds.publicSourcesReadiness).toBe("sapphire.nexus.adapter.public_sources.v1");
     expect(wellKnown.schemaIds.aoeReadiness).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
     expect(wellKnown.schemaIds.agentRuntimePublication).toBe("sapphire.nexus.adapter.agent_runtime_publication.v1");
     expect(wellKnown.schemaIds.modelGateway).toBe("sapphire.nexus.model_gateway.v1");
@@ -65,6 +68,25 @@ describe("Sapphire Nexus contracts", () => {
     expect(ledger.summary.byKind["owned-repo"]).toBeGreaterThan(3);
     expect(ledger.records[0].evidenceHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(ledger.records.some((record) => record.sourceId === "arigatoexpress/Sapphire")).toBe(true);
+  });
+
+  test("public source adapter classifies rights without remote fetches or vendoring", () => {
+    const report = buildPublicSourcesReadiness(loadLandscape(), new Date("2026-05-23T01:40:00.000Z"));
+
+    expect(report.schemaId).toBe("sapphire.nexus.adapter.public_sources.v1");
+    expect(report.summary.status).toBe("ready");
+    expect(report.summary.publicSources).toBeGreaterThan(10);
+    expect(report.summary.permissive).toBeGreaterThan(5);
+    expect(report.summary.referenceOnly).toBeGreaterThan(0);
+    expect(report.summary.needsReview).toBe(0);
+    expect(report.safety.fetchesRemoteSources).toBe(false);
+    expect(report.safety.vendorsCode).toBe(false);
+    expect(report.safety.rawPayloadsStored).toBe(false);
+    expect(report.policy.copyleftSourcesReferenceOnly).toBe(true);
+    expect(report.sources.find((source) => source.sourceId === "OpenBB-finance/OpenBB")?.rights.reusePosture).toBe(
+      "reference-only",
+    );
+    expect(report.sources[0].sourceHash).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
 
   test("AOE adapter summarizes public contracts without storing raw bundles", async () => {
@@ -374,6 +396,11 @@ describe("Sapphire Nexus contracts", () => {
           summary: { records: 41 },
           rawPayload: "PRIVATE_SAMPLE",
         }),
+        publicSources: () => ({
+          safety: { rawPayloadsStored: false },
+          summary: { status: "ready", publicSources: 18, permissive: 15, referenceOnly: 3, needsReview: 0 },
+          rawPayload: "PRIVATE_SOURCE_SAMPLE",
+        }),
         modelGateway: () => ({ summary: { gateways: 2, ready: 2, degraded: 0 } }),
         modelPromptSmoke: () => ({
           summary: { status: "disabled", ready: false, reason: "not enabled" },
@@ -394,11 +421,12 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(report.schemaId).toBe("sapphire.nexus.readiness.v1");
     expect(report.status).toBe("ready");
-    expect(report.summary).toEqual({ checks: 6, ready: 5, degraded: 0, disabled: 1, productionUsable: true });
+    expect(report.summary).toEqual({ checks: 7, ready: 6, degraded: 0, disabled: 1, productionUsable: true });
     expect(report.safety.liveActionsEnabled).toBe(false);
     expect(report.checks.map((check) => check.id)).toEqual([
       "health",
       "evidenceLedger",
+      "publicSources",
       "modelGateway",
       "modelPromptSmoke",
       "aoe",
@@ -406,6 +434,7 @@ describe("Sapphire Nexus contracts", () => {
     ]);
     expect(report.checks.find((check) => check.id === "modelPromptSmoke")?.status).toBe("disabled");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_SAMPLE");
+    expect(JSON.stringify(report)).not.toContain("PRIVATE_SOURCE_SAMPLE");
   });
 
   test("nexus readiness treats public-mode local adapters as disabled, not degraded", async () => {
@@ -415,10 +444,11 @@ describe("Sapphire Nexus contracts", () => {
     });
 
     expect(report.status).toBe("ready");
-    expect(report.summary.ready).toBe(2);
+    expect(report.summary.ready).toBe(3);
     expect(report.summary.degraded).toBe(0);
     expect(report.summary.disabled).toBe(4);
     expect(report.summary.productionUsable).toBe(true);
+    expect(report.checks.find((check) => check.id === "publicSources")?.status).toBe("ready");
     expect(report.checks.find((check) => check.id === "modelGateway")?.status).toBe("disabled");
     expect(report.checks.find((check) => check.id === "aoe")?.status).toBe("disabled");
     expect(report.checks.find((check) => check.id === "agentRuntime")?.status).toBe("disabled");

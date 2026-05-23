@@ -12,6 +12,7 @@ Status: read-only public surface; live actions disabled.
 - GET /.well-known/sapphire-nexus.json
 - GET /v1/readiness
 - GET /v1/evidence-ledger
+- GET /v1/adapters/public-sources/readiness
 - GET /v1/landscape
 - GET /v1/market/research-posture
 
