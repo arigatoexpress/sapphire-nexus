@@ -6,6 +6,11 @@ if (!baseUrl) {
 }
 
 const expectedOrigin = new URL(baseUrl).origin;
+const requiredHeaders = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+  "x-frame-options": "DENY",
+};
 
 const checks = [
   { id: "health", path: "/health", validate: (body) => body.status === "ok" && body.liveActionsEnabled === false },
@@ -48,12 +53,13 @@ for (const check of checks) {
   try {
     const response = await fetch(url, { headers: { accept: check.validateText ? "text/plain, text/html" : "application/json" } });
     const elapsedMs = Date.now() - started;
+    const headersOk = Object.entries(requiredHeaders).every(([name, expected]) => response.headers.get(name) === expected);
     if (check.validateText) {
       const text = await response.text();
-      results.push({ id: check.id, status: response.status, ok: response.ok && check.validateText(text), elapsedMs });
+      results.push({ id: check.id, status: response.status, ok: response.ok && headersOk && check.validateText(text), headersOk, elapsedMs });
     } else {
       const body = await response.json();
-      results.push({ id: check.id, status: response.status, ok: response.ok && check.validate(body), elapsedMs });
+      results.push({ id: check.id, status: response.status, ok: response.ok && headersOk && check.validate(body), headersOk, elapsedMs });
     }
   } catch (error) {
     results.push({ id: check.id, status: null, ok: false, elapsedMs: Date.now() - started, error: error.name });
