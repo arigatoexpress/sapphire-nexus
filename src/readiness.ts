@@ -1,5 +1,6 @@
 import { checkAgentRuntimePublication } from "./adapters/agent-runtime.js";
 import { checkAoeReadiness } from "./adapters/aoe.js";
+import { buildPublicSourcesReadiness } from "./adapters/public-sources.js";
 import {
   NEXUS_READINESS_SCHEMA_ID,
   buildHealth,
@@ -8,11 +9,11 @@ import {
   checkModelPromptSmoke,
 } from "./contracts.js";
 
-type ProbeId = "health" | "evidenceLedger" | "modelGateway" | "modelPromptSmoke" | "aoe" | "agentRuntime";
+type ProbeId = "health" | "evidenceLedger" | "publicSources" | "modelGateway" | "modelPromptSmoke" | "aoe" | "agentRuntime";
 type ProbeStatus = "ready" | "degraded" | "unreachable" | "blocked" | "disabled";
 type ProbeRunner = () => Promise<unknown> | unknown;
 
-const PROBE_ORDER: ProbeId[] = ["health", "evidenceLedger", "modelGateway", "modelPromptSmoke", "aoe", "agentRuntime"];
+const PROBE_ORDER: ProbeId[] = ["health", "evidenceLedger", "publicSources", "modelGateway", "modelPromptSmoke", "aoe", "agentRuntime"];
 
 export async function checkNexusReadiness(options: {
   env?: NodeJS.ProcessEnv;
@@ -24,6 +25,7 @@ export async function checkNexusReadiness(options: {
   const probes: Record<ProbeId, ProbeRunner> = {
     health: () => buildHealth(now),
     evidenceLedger: () => buildLandscapeEvidenceLedger(),
+    publicSources: () => buildPublicSourcesReadiness(undefined, now),
     modelGateway: () => checkModelGatewayReadiness({ env, now }),
     modelPromptSmoke: () => checkModelPromptSmoke({ env, now }),
     aoe: () => checkAoeReadiness({ env, now }),
@@ -116,6 +118,22 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
         },
       };
     }
+    case "publicSources": {
+      const status = statusValue(summary.status);
+      const rawPayloadsStored = booleanValue(plainRecord(record.safety).rawPayloadsStored);
+      const ready = status === "ready" && rawPayloadsStored === false;
+      return {
+        status: ready ? "ready" : "degraded",
+        ready,
+        detail: {
+          publicSources: numberValue(summary.publicSources),
+          permissive: numberValue(summary.permissive),
+          referenceOnly: numberValue(summary.referenceOnly),
+          needsReview: numberValue(summary.needsReview),
+          rawPayloadsStored,
+        },
+      };
+    }
     case "modelGateway": {
       const degraded = numberValue(summary.degraded) ?? 0;
       const disabled = numberValue(summary.disabled) ?? 0;
@@ -184,6 +202,7 @@ function labelForProbe(id: ProbeId) {
   return {
     health: "Core health",
     evidenceLedger: "Evidence ledger",
+    publicSources: "Public-source rights adapter",
     modelGateway: "Model gateway readiness",
     modelPromptSmoke: "Local prompt smoke",
     aoe: "AOE adapter",

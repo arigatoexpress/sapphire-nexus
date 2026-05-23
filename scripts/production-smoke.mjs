@@ -19,6 +19,14 @@ const checks = [
     path: "/v1/readiness",
     validate: (body) => body.schemaId === "sapphire.nexus.readiness.v1" && body.safety?.liveActionsEnabled === false,
   },
+  {
+    id: "publicSources",
+    path: "/v1/adapters/public-sources/readiness",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.adapter.public_sources.v1" &&
+      body.summary?.status === "ready" &&
+      body.safety?.rawPayloadsStored === false,
+  },
   { id: "workbench", path: "/", validateText: (text) => text.includes("Sapphire Nexus") && text.includes("Readiness") },
   {
     id: "llms",

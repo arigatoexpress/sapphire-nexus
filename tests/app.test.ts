@@ -31,6 +31,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.thesis).toBe("/v1/thesis");
     expect(discovery.routes.llmsTxt).toBe("/llms.txt");
     expect(discovery.routes.robotsTxt).toBe("/robots.txt");
+    expect(discovery.routes.publicSourcesReadiness).toBe("/v1/adapters/public-sources/readiness");
 
     const llmsRes = await app.request("http://127.0.0.1:4420/llms.txt");
     expect(llmsRes.status).toBe(200);
@@ -56,6 +57,14 @@ describe("Sapphire Nexus API", () => {
     const ledger = await ledgerRes.json();
     expect(ledger.schemaId).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(ledger.safety.rawPayloadsStored).toBe(false);
+
+    const publicSourcesRes = await app.request("/v1/adapters/public-sources/readiness");
+    expect(publicSourcesRes.status).toBe(200);
+    const publicSources = await publicSourcesRes.json();
+    expect(publicSources.schemaId).toBe("sapphire.nexus.adapter.public_sources.v1");
+    expect(publicSources.summary.status).toBe("ready");
+    expect(publicSources.safety.fetchesRemoteSources).toBe(false);
+    expect(publicSources.safety.vendorsCode).toBe(false);
 
     const aoeRes = await app.request("/v1/adapters/aoe/readiness");
     expect(aoeRes.status).toBe(200);

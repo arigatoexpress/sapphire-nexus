@@ -65,6 +65,7 @@ local infrastructure.
 - `GET /v1/landscape`
 - `GET /v1/readiness`
 - `GET /v1/evidence-ledger`
+- `GET /v1/adapters/public-sources/readiness`
 - `GET /v1/adapters/aoe/readiness`
 - `GET /v1/adapters/agent-runtime/publication`
 - `GET /v1/model-gateway`
@@ -96,6 +97,11 @@ fallbacks, training jobs, or runtime mutations.
 `GET /v1/evidence-ledger` turns the landscape catalog into stable, hash-addressed
 evidence records. It stores links, source ids, rights metadata, summaries, and
 hashes; it does not store raw private payloads.
+
+`GET /v1/adapters/public-sources/readiness` summarizes the public open-source
+shortlist as a rights-cleared adapter. It classifies permissive references,
+copyleft/reference-only sources, and sources needing review without fetching
+remote payloads, vendoring code, or making license override claims.
 
 `GET /llms.txt` and `GET /robots.txt` expose public metadata for AI agents,
 crawlers, and operators. They summarize the public routes, source-rights
