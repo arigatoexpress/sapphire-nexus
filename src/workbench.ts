@@ -1,10 +1,14 @@
 import type { Landscape } from "./contracts.js";
 import { buildSafetyBoundary } from "./contracts.js";
+import type { checkNexusReadiness } from "./readiness.js";
 
-export function renderWorkbench(landscape: Landscape) {
+type ReadinessReport = Awaited<ReturnType<typeof checkNexusReadiness>>;
+
+export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport) {
   const safety = buildSafetyBoundary();
   const reusable = landscape.ownedRepoSignals.filter((repo) => !repo.repo.includes("0guard") && !repo.repo.includes("wildfire"));
   const topOpenSource = landscape.openSourceShortlist.slice(0, 6);
+  const readinessTone = readiness.status === "ready" ? "ready" : "degraded";
 
   return `<!doctype html>
 <html lang="en">
@@ -63,6 +67,8 @@ export function renderWorkbench(landscape: Landscape) {
     .subtle { color: var(--muted); font-size: 13px; }
     .status { display: flex; align-items: center; gap: 8px; color: var(--green); font-size: 13px; white-space: nowrap; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .status.degraded { color: var(--gold); }
+    .status.degraded .dot { background: var(--gold); }
     .grid {
       display: grid;
       grid-template-columns: minmax(280px, 1.15fr) minmax(280px, 0.85fr);
@@ -130,6 +136,34 @@ export function renderWorkbench(landscape: Landscape) {
     }
     .metric { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #101216; }
     .metric strong { display: block; font-size: 22px; margin-bottom: 4px; }
+    .check-list { display: grid; gap: 8px; margin-top: 12px; }
+    .check {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #101216;
+      min-height: 44px;
+    }
+    .check-name { min-width: 0; color: #dce5f2; font-size: 13px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 84px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #314153;
+      color: var(--cyan);
+      font-size: 12px;
+      background: #111a20;
+      white-space: nowrap;
+    }
+    .badge.ready { color: var(--green); border-color: #2c6148; }
+    .badge.degraded, .badge.unreachable, .badge.disabled, .badge.blocked { color: var(--gold); border-color: #655229; }
     @media (max-width: 860px) {
       .grid { grid-template-columns: 1fr; padding: 14px; }
       .principles, .metric-row { grid-template-columns: 1fr; }
@@ -148,10 +182,28 @@ export function renderWorkbench(landscape: Landscape) {
         <div class="subtle">local-first intelligence kernel</div>
       </div>
     </div>
-    <div class="status"><span class="dot"></span>live actions disabled</div>
+    <div class="status ${readinessTone}"><span class="dot"></span>${escapeHtml(readiness.status)} readiness · live actions disabled</div>
   </div>
   <div class="grid">
     <div class="stack">
+      <section>
+        <div class="section-head"><h2>Readiness</h2><span class="subtle">summary-only</span></div>
+        <div class="body">
+          <div class="metric-row">
+            <div class="metric"><strong>${readiness.summary.ready}</strong><span class="subtle">ready checks</span></div>
+            <div class="metric"><strong>${readiness.summary.degraded}</strong><span class="subtle">degraded checks</span></div>
+            <div class="metric"><strong>${readiness.summary.disabled}</strong><span class="subtle">disabled checks</span></div>
+          </div>
+          <div class="check-list">
+            ${readiness.checks
+              .map(
+                (check) =>
+                  `<div class="check"><div class="check-name">${escapeHtml(check.label)}</div><span class="badge ${escapeHtml(check.status)}">${escapeHtml(check.status)}</span></div>`,
+              )
+              .join("")}
+          </div>
+        </div>
+      </section>
       <section>
         <div class="section-head"><h2>Operating Thesis</h2><span class="subtle">${escapeHtml(landscape.generatedAt)}</span></div>
         <div class="body">
