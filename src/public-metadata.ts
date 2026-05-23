@@ -10,6 +10,7 @@ Status: read-only public surface; live actions disabled.
 
 - GET /health
 - GET /.well-known/sapphire-nexus.json
+- GET /openapi.json
 - GET /v1/deployment
 - GET /v1/readiness
 - GET /v1/evidence-ledger

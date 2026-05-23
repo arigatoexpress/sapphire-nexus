@@ -19,7 +19,19 @@ const checks = [
     id: "discovery",
     path: "/.well-known/sapphire-nexus.json",
     validate: (body) =>
-      body.origin === expectedOrigin && body.routes?.readiness === "/v1/readiness" && body.routes?.deployment === "/v1/deployment",
+      body.origin === expectedOrigin &&
+      body.routes?.readiness === "/v1/readiness" &&
+      body.routes?.deployment === "/v1/deployment" &&
+      body.routes?.openApi === "/openapi.json",
+  },
+  {
+    id: "openapi",
+    path: "/openapi.json",
+    validate: (body) =>
+      body.openapi === "3.1.0" &&
+      body.servers?.[0]?.url === expectedOrigin &&
+      body.paths?.["/v1/readiness"]?.get?.operationId === "readiness" &&
+      body["x-sapphire-nexus"]?.liveActionsEnabled === false,
   },
   {
     id: "deployment",

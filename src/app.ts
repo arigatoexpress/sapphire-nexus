@@ -15,6 +15,7 @@ import {
   publicOrigin,
 } from "./contracts.js";
 import { buildDeploymentIdentity } from "./deployment.js";
+import { buildOpenApiSpec } from "./openapi.js";
 import { buildLlmsTxt, buildRobotsTxt } from "./public-metadata.js";
 import { checkNexusReadiness } from "./readiness.js";
 import { PUBLIC_RESPONSE_HEADERS } from "./response-headers.js";
@@ -43,6 +44,7 @@ export function createApp() {
   );
   app.get("/health", (c) => c.json(buildHealth()));
   app.get("/.well-known/sapphire-nexus.json", (c) => c.json(buildWellKnown(publicOrigin(c.req.raw))));
+  app.get("/openapi.json", (c) => c.json(buildOpenApiSpec(publicOrigin(c.req.raw))));
   app.get("/llms.txt", (c) =>
     c.text(buildLlmsTxt(publicOrigin(c.req.raw)), 200, {
       "content-type": "text/plain; charset=utf-8",

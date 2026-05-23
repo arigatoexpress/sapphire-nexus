@@ -41,6 +41,7 @@ describe("Sapphire Nexus API", () => {
     const discovery = await discoveryRes.json();
     expect(discovery.origin).toBe("http://127.0.0.1:4420");
     expect(discovery.routes.thesis).toBe("/v1/thesis");
+    expect(discovery.routes.openApi).toBe("/openapi.json");
     expect(discovery.routes.llmsTxt).toBe("/llms.txt");
     expect(discovery.routes.robotsTxt).toBe("/robots.txt");
     expect(discovery.routes.deployment).toBe("/v1/deployment");
@@ -59,6 +60,14 @@ describe("Sapphire Nexus API", () => {
     expect(robotsRes.status).toBe(200);
     expect(robotsRes.headers.get("content-type")).toContain("text/plain");
     expect(await robotsRes.text()).toContain("llms.txt: http://127.0.0.1:4420/llms.txt");
+
+    const openApiRes = await app.request("http://127.0.0.1:4420/openapi.json");
+    expect(openApiRes.status).toBe(200);
+    const openApi = await openApiRes.json();
+    expect(openApi.openapi).toBe("3.1.0");
+    expect(openApi.servers[0].url).toBe("http://127.0.0.1:4420");
+    expect(openApi.paths["/v1/readiness"].get.operationId).toBe("readiness");
+    expect(openApi["x-sapphire-nexus"].liveActionsEnabled).toBe(false);
 
     const deploymentRes = await app.request("http://127.0.0.1:4420/v1/deployment");
     expect(deploymentRes.status).toBe(200);

@@ -36,6 +36,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(health.liveActionsEnabled).toBe(false);
 
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
+    expect(wellKnown.routes.openApi).toBe("/openapi.json");
+    expect(wellKnown.schemaIds.openApi).toBe("sapphire.nexus.openapi.v1");
     expect(wellKnown.routes.deployment).toBe("/v1/deployment");
     expect(wellKnown.schemaIds.deployment).toBe("sapphire.nexus.deployment_identity.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
