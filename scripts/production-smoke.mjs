@@ -6,6 +6,7 @@ if (!baseUrl) {
 }
 
 const expectedOrigin = new URL(baseUrl).origin;
+const expectedRevision = process.env.SAPPHIRE_NEXUS_EXPECTED_REVISION;
 const requiredHeaders = {
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
@@ -26,9 +27,11 @@ const checks = [
     validate: (body) =>
       body.schemaId === "sapphire.nexus.deployment_identity.v1" &&
       body.origin === expectedOrigin &&
+      (expectedRevision ? body.runtime?.revision === expectedRevision : true) &&
       body.mode?.liveActionsEnabled === false &&
       body.safety?.readsSecrets === false &&
       body.safety?.exposesEnvironmentDump === false,
+    detail: (body) => ({ revision: body.runtime?.revision ?? null, expectedRevision: expectedRevision ?? null }),
   },
   {
     id: "readiness",
@@ -75,7 +78,14 @@ for (const check of checks) {
       results.push({ id: check.id, status: response.status, ok: response.ok && headersOk && check.validateText(text), headersOk, elapsedMs });
     } else {
       const body = await response.json();
-      results.push({ id: check.id, status: response.status, ok: response.ok && headersOk && check.validate(body), headersOk, elapsedMs });
+      results.push({
+        id: check.id,
+        status: response.status,
+        ok: response.ok && headersOk && check.validate(body),
+        headersOk,
+        elapsedMs,
+        ...(check.detail ? { detail: check.detail(body) } : {}),
+      });
     }
   } catch (error) {
     results.push({ id: check.id, status: null, ok: false, elapsedMs: Date.now() - started, error: error.name });
@@ -83,7 +93,7 @@ for (const check of checks) {
 }
 
 const ok = results.every((result) => result.ok);
-console.log(JSON.stringify({ ok, baseUrl, results }, null, 2));
+console.log(JSON.stringify({ ok, baseUrl, expectedRevision: expectedRevision ?? null, results }, null, 2));
 if (!ok) {
   process.exit(1);
 }

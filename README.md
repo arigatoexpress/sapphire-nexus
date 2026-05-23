@@ -54,6 +54,14 @@ After deploy, run:
 npm run smoke:production -- https://your-deployment-url
 ```
 
+When checking a specific Cloud Run revision, pass the revision observed from
+`gcloud run services describe` so smoke fails if the public deployment identity
+does not match:
+
+```bash
+SAPPHIRE_NEXUS_EXPECTED_REVISION=sapphire-nexus-00008-r46 npm run smoke:production -- https://your-deployment-url
+```
+
 For Cloud Run, the app uses `PORT` and binds to `0.0.0.0` when `K_SERVICE` is
 present. The checked-in `Dockerfile` sets `SAPPHIRE_NEXUS_PUBLIC_MODE=true` so
 the service exposes the public workbench and contracts without probing private
