@@ -85,6 +85,7 @@ export function buildWellKnown(origin: string) {
     origin,
     routes: {
       health: "/health",
+      openApi: "/openapi.json",
       llmsTxt: "/llms.txt",
       robotsTxt: "/robots.txt",
       deployment: "/v1/deployment",
@@ -102,6 +103,7 @@ export function buildWellKnown(origin: string) {
     },
     schemaIds: {
       health: HEALTH_SCHEMA_ID,
+      openApi: "sapphire.nexus.openapi.v1",
       deployment: DEPLOYMENT_IDENTITY_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,

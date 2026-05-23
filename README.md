@@ -72,6 +72,7 @@ local infrastructure.
 - `GET /`
 - `GET /health`
 - `GET /.well-known/sapphire-nexus.json`
+- `GET /openapi.json`
 - `GET /llms.txt`
 - `GET /robots.txt`
 - `GET /v1/deployment`
@@ -116,6 +117,11 @@ hashes; it does not store raw private payloads.
 origin, provider, Cloud Run service/revision metadata when present, public mode,
 and the production verification checklist. It does not dump environment
 variables, read secrets, mutate infrastructure, or broaden permissions.
+
+`GET /openapi.json` exposes a small OpenAPI 3.1 contract for the read-only
+public API. It lists the public JSON routes, schema ids, and the disabled
+live-action posture so clients and agents can integrate without scraping the
+workbench.
 
 `GET /v1/adapters/public-sources/readiness` summarizes the public open-source
 shortlist as a rights-cleared adapter. It classifies permissive references,
