@@ -126,7 +126,7 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(report.schemaId).toBe("sapphire.nexus.adapter.aoe_readiness.v1");
     expect(report.adapter.baseUrl).toBe("http://127.0.0.1:4402");
-    expect(report.summary).toEqual({ endpoints: 4, ready: 4, degraded: 0, status: "ready" });
+    expect(report.summary).toEqual({ endpoints: 4, ready: 4, degraded: 0, status: "ready", operatorHint: null });
     expect(report.safety.storesRawContractBundle).toBe(false);
     expect(report.safety.paymentSettlementAllowed).toBe(false);
     expect(report.endpoints.find((endpoint) => endpoint.id === "contracts")?.summary).toEqual(
@@ -136,6 +136,26 @@ describe("Sapphire Nexus contracts", () => {
         schemaCatalogCount: 2,
       }),
     );
+  });
+
+  test("AOE adapter reports an operator hint without starting adjacent services", async () => {
+    const report = await checkAoeReadiness({
+      baseUrl: "http://127.0.0.1:4402",
+      fetchImpl: (async () => {
+        throw new Error("offline");
+      }) as typeof fetch,
+      now: new Date("2026-05-23T00:40:00.000Z"),
+    });
+
+    expect(report.summary.status).toBe("unreachable");
+    expect(report.summary.operatorHint).toEqual({
+      reason: "aoe adapter is not fully reachable",
+      expectedBaseUrl: "http://127.0.0.1:4402",
+      autoStart: false,
+      mutatesAdjacentService: false,
+      safeNextAction:
+        "Start or deploy AOE separately, then point SAPPHIRE_NEXUS_AOE_URL at that read-only public contract surface.",
+    });
   });
 
   test("agent runtime adapter summarizes publication plan without generated payloads", async () => {
@@ -301,6 +321,7 @@ describe("Sapphire Nexus contracts", () => {
     expect(fetched).toBe(false);
     expect(executed).toBe(false);
     expect(aoe.summary.status).toBe("disabled");
+    expect(aoe.summary.operatorHint).toEqual(expect.objectContaining({ autoStart: false }));
     expect(runtime.summary.status).toBe("disabled");
     expect(promptSmoke.summary.status).toBe("disabled");
   });
@@ -401,6 +422,9 @@ describe("Sapphire Nexus contracts", () => {
     expect(report.checks.find((check) => check.id === "modelGateway")?.status).toBe("disabled");
     expect(report.checks.find((check) => check.id === "aoe")?.status).toBe("disabled");
     expect(report.checks.find((check) => check.id === "agentRuntime")?.status).toBe("disabled");
+    expect(report.checks.find((check) => check.id === "aoe")?.detail.operatorHint).toEqual(
+      expect.objectContaining({ autoStart: false, mutatesAdjacentService: false }),
+    );
   });
 
   test("market posture is research-only and blocks execution language", () => {

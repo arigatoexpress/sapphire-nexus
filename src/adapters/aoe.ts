@@ -56,6 +56,7 @@ export async function checkAoeReadiness(options: {
     }),
   );
   const readyCount = endpointResults.filter((endpoint) => endpoint.status === "ready").length;
+  const status = readyCount === endpointResults.length ? "ready" : readyCount > 0 ? "degraded" : "unreachable";
 
   return {
     schemaId: AOE_ADAPTER_READINESS_SCHEMA_ID,
@@ -79,7 +80,8 @@ export async function checkAoeReadiness(options: {
       endpoints: endpointResults.length,
       ready: readyCount,
       degraded: endpointResults.length - readyCount,
-      status: readyCount === endpointResults.length ? "ready" : readyCount > 0 ? "degraded" : "unreachable",
+      status,
+      operatorHint: status === "ready" ? null : buildOperatorHint(baseUrl, "aoe adapter is not fully reachable"),
     },
     endpoints: endpointResults,
   };
@@ -111,6 +113,7 @@ function buildDisabledReport(baseUrl: string, now: Date | undefined) {
       disabled: AOE_ENDPOINTS.length,
       status: "disabled",
       reason: publicDeploymentReason(),
+      operatorHint: buildOperatorHint(baseUrl, publicDeploymentReason()),
     },
     endpoints: AOE_ENDPOINTS.map((endpoint) => ({
       id: endpoint.id,
@@ -120,6 +123,17 @@ function buildDisabledReport(baseUrl: string, now: Date | undefined) {
       durationMs: 0,
       summary: { reason: publicDeploymentReason() },
     })),
+  };
+}
+
+function buildOperatorHint(baseUrl: string, reason: string) {
+  return {
+    reason,
+    expectedBaseUrl: baseUrl,
+    autoStart: false,
+    mutatesAdjacentService: false,
+    safeNextAction:
+      "Start or deploy AOE separately, then point SAPPHIRE_NEXUS_AOE_URL at that read-only public contract surface.",
   };
 }
 
