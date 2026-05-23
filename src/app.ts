@@ -3,6 +3,7 @@ import { checkAoeReadiness } from "./adapters/aoe.js";
 import { checkAgentRuntimePublication } from "./adapters/agent-runtime.js";
 import { buildPublicSourcesReadiness } from "./adapters/public-sources.js";
 import { buildRepoMiningReadiness } from "./adapters/repo-mining.js";
+import { buildTrendingSignalsReadiness } from "./adapters/trending-signals.js";
 import {
   buildHealth,
   buildClientBrief,
@@ -69,6 +70,7 @@ export function createApp() {
   app.get("/v1/readiness", async (c) => c.json(await checkNexusReadiness()));
   app.get("/v1/evidence-ledger", (c) => c.json(buildLandscapeEvidenceLedger()));
   app.get("/v1/adapters/repo-mining/readiness", (c) => c.json(buildRepoMiningReadiness()));
+  app.get("/v1/adapters/trending-signals/readiness", (c) => c.json(buildTrendingSignalsReadiness()));
   app.get("/v1/adapters/public-sources/readiness", (c) => c.json(buildPublicSourcesReadiness()));
   app.get("/v1/adapters/aoe/readiness", async (c) => c.json(await checkAoeReadiness()));
   app.get("/v1/adapters/agent-runtime/publication", async (c) => c.json(await checkAgentRuntimePublication()));

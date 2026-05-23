@@ -25,6 +25,7 @@ const checks = [
       body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.verificationManifest === "/v1/verification-manifest" &&
       body.routes?.repoMiningReadiness === "/v1/adapters/repo-mining/readiness" &&
+      body.routes?.trendingSignalsReadiness === "/v1/adapters/trending-signals/readiness" &&
       body.routes?.openApi === "/openapi.json" &&
       body.routes?.operatorNextActions === "/v1/operator/next-actions",
   },
@@ -37,6 +38,7 @@ const checks = [
       body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
       body.paths?.["/v1/adapters/repo-mining/readiness"]?.get?.operationId === "repoMiningReadiness" &&
+      body.paths?.["/v1/adapters/trending-signals/readiness"]?.get?.operationId === "trendingSignalsReadiness" &&
       body.paths?.["/v1/readiness"]?.get?.operationId === "readiness" &&
       body.paths?.["/v1/operator/next-actions"]?.get?.operationId === "operatorNextActions" &&
       body["x-sapphire-nexus"]?.liveActionsEnabled === false,
@@ -88,6 +90,16 @@ const checks = [
       body.policy?.protectedProductsStaySeparate === true,
   },
   {
+    id: "trendingSignals",
+    path: "/v1/adapters/trending-signals/readiness",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.adapter.trending_signals.v1" &&
+      body.summary?.status === "ready" &&
+      body.summary?.currentTrendClaimsAllowed === false &&
+      body.safety?.fetchesRemoteSources === false &&
+      body.policy?.refreshRequiredBeforeClientTrendClaims === true,
+  },
+  {
     id: "publicSources",
     path: "/v1/adapters/public-sources/readiness",
     validate: (body) =>
@@ -118,6 +130,7 @@ const checks = [
       text.includes("API Surface") &&
       text.includes("/openapi.json") &&
       text.includes("/v1/adapters/repo-mining/readiness") &&
+      text.includes("/v1/adapters/trending-signals/readiness") &&
       text.includes("Next Actions") &&
       text.includes("/v1/operator/next-actions"),
   },

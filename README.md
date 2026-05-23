@@ -83,6 +83,7 @@ local infrastructure.
 - `GET /v1/readiness`
 - `GET /v1/evidence-ledger`
 - `GET /v1/adapters/repo-mining/readiness`
+- `GET /v1/adapters/trending-signals/readiness`
 - `GET /v1/adapters/public-sources/readiness`
 - `GET /v1/adapters/aoe/readiness`
 - `GET /v1/adapters/agent-runtime/publication`
@@ -101,10 +102,10 @@ infrastructure mutation.
 configured local model gateways. It does not send prompts, start training, read
 secrets, or mutate runtimes.
 
-`GET /v1/readiness` rolls core health, evidence, repo-mining, public-source,
-model gateway, prompt smoke, AOE, and agent-runtime publication checks into one
-operator status envelope. It keeps per-check details summary-only and does not
-store raw payloads.
+`GET /v1/readiness` rolls core health, evidence, repo-mining,
+trending-signals, public-source, model gateway, prompt smoke, AOE, and
+agent-runtime publication checks into one operator status envelope. It keeps
+per-check details summary-only and does not store raw payloads.
 
 `GET /v1/model-gateway/prompt-smoke` is disabled by default. When
 `SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED=true` and
@@ -137,6 +138,12 @@ signals from checked-in landscape metadata. It exposes repo links, mining
 intent, avoidance guidance, rights envelopes, and stable hashes only. It does
 not fetch remote repositories, vendor source code, delete source repos, broaden
 permissions, or collapse protected products into Nexus.
+
+`GET /v1/adapters/trending-signals/readiness` summarizes checked-in GitHub
+trend-signal snapshots from the landscape catalog. It exposes repo links,
+snapshot stars-this-week values, fit summaries, freshness caveats, and stable
+hashes only. It does not fetch GitHub live, vendor source code, store raw
+payload dumps, or allow current-trend claims without manual refresh.
 
 `GET /llms.txt` and `GET /robots.txt` expose public metadata for AI agents,
 crawlers, and operators. They summarize the public routes, source-rights
