@@ -159,6 +159,7 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
           degraded: numberValue(summary.degraded),
           disabled: numberValue(summary.disabled),
           reason: stringValue(summary.reason),
+          operatorHint: plainRecord(summary.operatorHint),
         },
       };
     }

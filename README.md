@@ -100,6 +100,11 @@ readiness, and contract endpoints and keeps only summaries. It does not settle
 payments, unlock paid content, send Telegram messages, or store raw contract
 bundles.
 
+When AOE is disabled or unreachable, Nexus returns an `operatorHint` with the
+expected base URL and `autoStart=false`. Nexus does not start, deploy, or mutate
+AOE for you; run AOE separately and point `SAPPHIRE_NEXUS_AOE_URL` at its
+read-only contract surface.
+
 `GET /v1/adapters/agent-runtime/publication` runs the control plane's
 publication-plan script and returns a summary of tracked-source readiness,
 generated-output exclusion, and visibility gates. It does not read generated
