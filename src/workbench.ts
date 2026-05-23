@@ -21,6 +21,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
     { label: "Verification", path: "/v1/verification-manifest", detail: "claim checks" },
     { label: "Readiness", path: "/v1/readiness", detail: "operator status" },
     { label: "Deployment", path: "/v1/deployment", detail: "live revision" },
+    { label: "Repo Mining", path: "/v1/adapters/repo-mining/readiness", detail: "contract reuse" },
     { label: "Public Sources", path: "/v1/adapters/public-sources/readiness", detail: "rights posture" },
     { label: "Next Actions", path: "/v1/operator/next-actions", detail: "operator queue" },
     { label: "LLMs", path: "/llms.txt", detail: "AI-readable guide" },

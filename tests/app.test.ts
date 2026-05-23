@@ -29,6 +29,7 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("/v1/verification-manifest");
     expect(html).toContain("API Surface");
     expect(html).toContain("/openapi.json");
+    expect(html).toContain("/v1/adapters/repo-mining/readiness");
     expect(html).toContain("/v1/operator/next-actions");
     expect(html).toContain("Next Actions");
     expect(html).toContain("ari-only");
@@ -57,6 +58,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.deployment).toBe("/v1/deployment");
     expect(discovery.routes.clientBrief).toBe("/v1/client/brief");
     expect(discovery.routes.verificationManifest).toBe("/v1/verification-manifest");
+    expect(discovery.routes.repoMiningReadiness).toBe("/v1/adapters/repo-mining/readiness");
     expect(discovery.routes.publicSourcesReadiness).toBe("/v1/adapters/public-sources/readiness");
     expect(discovery.routes.operatorNextActions).toBe("/v1/operator/next-actions");
 
@@ -81,6 +83,7 @@ describe("Sapphire Nexus API", () => {
     expect(openApi.servers[0].url).toBe("http://127.0.0.1:4420");
     expect(openApi.paths["/v1/client/brief"].get.operationId).toBe("clientBrief");
     expect(openApi.paths["/v1/verification-manifest"].get.operationId).toBe("verificationManifest");
+    expect(openApi.paths["/v1/adapters/repo-mining/readiness"].get.operationId).toBe("repoMiningReadiness");
     expect(openApi.paths["/v1/readiness"].get.operationId).toBe("readiness");
     expect(openApi.paths["/v1/operator/next-actions"].get.operationId).toBe("operatorNextActions");
     expect(openApi["x-sapphire-nexus"].liveActionsEnabled).toBe(false);
@@ -121,6 +124,14 @@ describe("Sapphire Nexus API", () => {
     const ledger = await ledgerRes.json();
     expect(ledger.schemaId).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(ledger.safety.rawPayloadsStored).toBe(false);
+
+    const repoMiningRes = await app.request("/v1/adapters/repo-mining/readiness");
+    expect(repoMiningRes.status).toBe(200);
+    const repoMining = await repoMiningRes.json();
+    expect(repoMining.schemaId).toBe("sapphire.nexus.adapter.repo_mining.v1");
+    expect(repoMining.summary.status).toBe("ready");
+    expect(repoMining.safety.fetchesRemoteSources).toBe(false);
+    expect(repoMining.safety.deletesSourceRepos).toBe(false);
 
     const publicSourcesRes = await app.request("/v1/adapters/public-sources/readiness");
     expect(publicSourcesRes.status).toBe(200);

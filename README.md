@@ -76,10 +76,13 @@ local infrastructure.
 - `GET /llms.txt`
 - `GET /robots.txt`
 - `GET /v1/deployment`
+- `GET /v1/client/brief`
+- `GET /v1/verification-manifest`
 - `GET /v1/thesis`
 - `GET /v1/landscape`
 - `GET /v1/readiness`
 - `GET /v1/evidence-ledger`
+- `GET /v1/adapters/repo-mining/readiness`
 - `GET /v1/adapters/public-sources/readiness`
 - `GET /v1/adapters/aoe/readiness`
 - `GET /v1/adapters/agent-runtime/publication`
@@ -98,9 +101,10 @@ infrastructure mutation.
 configured local model gateways. It does not send prompts, start training, read
 secrets, or mutate runtimes.
 
-`GET /v1/readiness` rolls core health, evidence, model gateway, prompt smoke,
-AOE, and agent-runtime publication checks into one operator status envelope. It
-keeps per-check details summary-only and does not store raw payloads.
+`GET /v1/readiness` rolls core health, evidence, repo-mining, public-source,
+model gateway, prompt smoke, AOE, and agent-runtime publication checks into one
+operator status envelope. It keeps per-check details summary-only and does not
+store raw payloads.
 
 `GET /v1/model-gateway/prompt-smoke` is disabled by default. When
 `SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED=true` and
@@ -127,6 +131,12 @@ workbench.
 shortlist as a rights-cleared adapter. It classifies permissive references,
 copyleft/reference-only sources, and sources needing review without fetching
 remote payloads, vendoring code, or making license override claims.
+
+`GET /v1/adapters/repo-mining/readiness` summarizes Ari-owned repo-mining
+signals from checked-in landscape metadata. It exposes repo links, mining
+intent, avoidance guidance, rights envelopes, and stable hashes only. It does
+not fetch remote repositories, vendor source code, delete source repos, broaden
+permissions, or collapse protected products into Nexus.
 
 `GET /llms.txt` and `GET /robots.txt` expose public metadata for AI agents,
 crawlers, and operators. They summarize the public routes, source-rights
