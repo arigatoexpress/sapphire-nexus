@@ -24,6 +24,7 @@ const checks = [
       body.routes?.deployment === "/v1/deployment" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.verificationManifest === "/v1/verification-manifest" &&
+      body.routes?.repoMiningReadiness === "/v1/adapters/repo-mining/readiness" &&
       body.routes?.openApi === "/openapi.json" &&
       body.routes?.operatorNextActions === "/v1/operator/next-actions",
   },
@@ -35,6 +36,7 @@ const checks = [
       body.servers?.[0]?.url === expectedOrigin &&
       body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
+      body.paths?.["/v1/adapters/repo-mining/readiness"]?.get?.operationId === "repoMiningReadiness" &&
       body.paths?.["/v1/readiness"]?.get?.operationId === "readiness" &&
       body.paths?.["/v1/operator/next-actions"]?.get?.operationId === "operatorNextActions" &&
       body["x-sapphire-nexus"]?.liveActionsEnabled === false,
@@ -76,6 +78,16 @@ const checks = [
     validate: (body) => body.schemaId === "sapphire.nexus.readiness.v1" && body.safety?.liveActionsEnabled === false,
   },
   {
+    id: "repoMining",
+    path: "/v1/adapters/repo-mining/readiness",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.adapter.repo_mining.v1" &&
+      body.summary?.status === "ready" &&
+      body.safety?.fetchesRemoteSources === false &&
+      body.safety?.deletesSourceRepos === false &&
+      body.policy?.protectedProductsStaySeparate === true,
+  },
+  {
     id: "publicSources",
     path: "/v1/adapters/public-sources/readiness",
     validate: (body) =>
@@ -105,6 +117,7 @@ const checks = [
       text.includes("/v1/verification-manifest") &&
       text.includes("API Surface") &&
       text.includes("/openapi.json") &&
+      text.includes("/v1/adapters/repo-mining/readiness") &&
       text.includes("Next Actions") &&
       text.includes("/v1/operator/next-actions"),
   },

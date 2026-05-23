@@ -1,6 +1,7 @@
 import { checkAgentRuntimePublication } from "./adapters/agent-runtime.js";
 import { checkAoeReadiness } from "./adapters/aoe.js";
 import { buildPublicSourcesReadiness } from "./adapters/public-sources.js";
+import { buildRepoMiningReadiness } from "./adapters/repo-mining.js";
 import {
   NEXUS_READINESS_SCHEMA_ID,
   buildHealth,
@@ -9,11 +10,28 @@ import {
   checkModelPromptSmoke,
 } from "./contracts.js";
 
-type ProbeId = "health" | "evidenceLedger" | "publicSources" | "modelGateway" | "modelPromptSmoke" | "aoe" | "agentRuntime";
+type ProbeId =
+  | "health"
+  | "evidenceLedger"
+  | "repoMining"
+  | "publicSources"
+  | "modelGateway"
+  | "modelPromptSmoke"
+  | "aoe"
+  | "agentRuntime";
 type ProbeStatus = "ready" | "degraded" | "unreachable" | "blocked" | "disabled";
 type ProbeRunner = () => Promise<unknown> | unknown;
 
-const PROBE_ORDER: ProbeId[] = ["health", "evidenceLedger", "publicSources", "modelGateway", "modelPromptSmoke", "aoe", "agentRuntime"];
+const PROBE_ORDER: ProbeId[] = [
+  "health",
+  "evidenceLedger",
+  "repoMining",
+  "publicSources",
+  "modelGateway",
+  "modelPromptSmoke",
+  "aoe",
+  "agentRuntime",
+];
 
 export async function checkNexusReadiness(options: {
   env?: NodeJS.ProcessEnv;
@@ -25,6 +43,7 @@ export async function checkNexusReadiness(options: {
   const probes: Record<ProbeId, ProbeRunner> = {
     health: () => buildHealth(now),
     evidenceLedger: () => buildLandscapeEvidenceLedger(),
+    repoMining: () => buildRepoMiningReadiness(undefined, now),
     publicSources: () => buildPublicSourcesReadiness(undefined, now),
     modelGateway: () => checkModelGatewayReadiness({ env, now }),
     modelPromptSmoke: () => checkModelPromptSmoke({ env, now }),
@@ -134,6 +153,27 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
         },
       };
     }
+    case "repoMining": {
+      const status = statusValue(summary.status);
+      const safety = plainRecord(record.safety);
+      const ready =
+        status === "ready" &&
+        booleanValue(safety.fetchesRemoteSources) === false &&
+        booleanValue(safety.vendorsCode) === false &&
+        booleanValue(safety.deletesSourceRepos) === false;
+      return {
+        status: ready ? "ready" : "degraded",
+        ready,
+        detail: {
+          repos: numberValue(summary.repos),
+          mineSignals: numberValue(summary.mineSignals),
+          avoidSignals: numberValue(summary.avoidSignals),
+          protectedLanesPreserved: numberValue(summary.protectedLanesPreserved),
+          fetchesRemoteSources: booleanValue(safety.fetchesRemoteSources),
+          vendorsCode: booleanValue(safety.vendorsCode),
+        },
+      };
+    }
     case "modelGateway": {
       const degraded = numberValue(summary.degraded) ?? 0;
       const disabled = numberValue(summary.disabled) ?? 0;
@@ -202,6 +242,7 @@ function labelForProbe(id: ProbeId) {
   return {
     health: "Core health",
     evidenceLedger: "Evidence ledger",
+    repoMining: "Repo-mining adapter",
     publicSources: "Public-source rights adapter",
     modelGateway: "Model gateway readiness",
     modelPromptSmoke: "Local prompt smoke",

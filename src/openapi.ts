@@ -36,6 +36,12 @@ export function buildOpenApiSpec(origin: string) {
         route("readiness", discovery.routes.readiness, "Readiness rollup", discovery.schemaIds.readiness),
         route("evidenceLedger", discovery.routes.evidenceLedger, "Stable evidence ledger", discovery.schemaIds.evidenceLedger),
         route(
+          "repoMiningReadiness",
+          discovery.routes.repoMiningReadiness,
+          "Owned-repo mining readiness",
+          discovery.schemaIds.repoMiningReadiness,
+        ),
+        route(
           "publicSourcesReadiness",
           discovery.routes.publicSourcesReadiness,
           "Public-source rights readiness",
