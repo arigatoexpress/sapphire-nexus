@@ -22,6 +22,7 @@ const checks = [
       body.origin === expectedOrigin &&
       body.routes?.readiness === "/v1/readiness" &&
       body.routes?.deployment === "/v1/deployment" &&
+      body.routes?.dataFreshness === "/v1/data/freshness" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.verificationManifest === "/v1/verification-manifest" &&
       body.routes?.repoMiningReadiness === "/v1/adapters/repo-mining/readiness" &&
@@ -36,6 +37,7 @@ const checks = [
       body.openapi === "3.1.0" &&
       body.servers?.[0]?.url === expectedOrigin &&
       body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
+      body.paths?.["/v1/data/freshness"]?.get?.operationId === "dataFreshness" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
       body.paths?.["/v1/adapters/repo-mining/readiness"]?.get?.operationId === "repoMiningReadiness" &&
       body.paths?.["/v1/adapters/trending-signals/readiness"]?.get?.operationId === "trendingSignalsReadiness" &&
@@ -54,6 +56,17 @@ const checks = [
       body.safety?.readsSecrets === false &&
       body.safety?.exposesEnvironmentDump === false,
     detail: (body) => ({ revision: body.runtime?.revision ?? null, expectedRevision: expectedRevision ?? null }),
+  },
+  {
+    id: "dataFreshness",
+    path: "/v1/data/freshness",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.data_freshness.v1" &&
+      body.origin === expectedOrigin &&
+      body.summary?.status === "ready" &&
+      body.summary?.manualRefreshRequiredForCurrentClaims >= 1 &&
+      body.safety?.fetchesRemoteSources === false &&
+      body.policy?.currentTrendClaimsRequireManualRefresh === true,
   },
   {
     id: "clientBrief",
@@ -125,6 +138,8 @@ const checks = [
       text.includes("Deployment Identity") &&
       text.includes("Client Brief") &&
       text.includes("/v1/client/brief") &&
+      text.includes("Data Freshness") &&
+      text.includes("/v1/data/freshness") &&
       text.includes("Verification") &&
       text.includes("/v1/verification-manifest") &&
       text.includes("API Surface") &&

@@ -23,6 +23,7 @@ export function buildOpenApiSpec(origin: string) {
       [
         route("health", discovery.routes.health, "Core health", discovery.schemaIds.health),
         route("deployment", discovery.routes.deployment, "Safe deployment identity", discovery.schemaIds.deployment),
+        route("dataFreshness", discovery.routes.dataFreshness, "Checked-in data freshness", discovery.schemaIds.dataFreshness),
         route("clientBrief", discovery.routes.clientBrief, "Client-safe production brief", discovery.schemaIds.clientBrief),
         route(
           "verificationManifest",

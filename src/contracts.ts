@@ -23,6 +23,7 @@ export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture
 export const OPERATOR_NEXT_ACTIONS_SCHEMA_ID = "sapphire.nexus.operator_next_actions.v1";
 export const CLIENT_BRIEF_SCHEMA_ID = "sapphire.nexus.client_brief.v1";
 export const VERIFICATION_MANIFEST_SCHEMA_ID = "sapphire.nexus.verification_manifest.v1";
+export const DATA_FRESHNESS_SCHEMA_ID = "sapphire.nexus.data_freshness.v1";
 const FIXED_PROMPT_SMOKE_PROMPT = "Return exactly the token NEXUS_OK.";
 
 const LandscapeSchema = z.object({
@@ -93,6 +94,7 @@ export function buildWellKnown(origin: string) {
       llmsTxt: "/llms.txt",
       robotsTxt: "/robots.txt",
       deployment: "/v1/deployment",
+      dataFreshness: "/v1/data/freshness",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
       readiness: "/v1/readiness",
@@ -114,6 +116,7 @@ export function buildWellKnown(origin: string) {
       health: HEALTH_SCHEMA_ID,
       openApi: "sapphire.nexus.openapi.v1",
       deployment: DEPLOYMENT_IDENTITY_SCHEMA_ID,
+      dataFreshness: DATA_FRESHNESS_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
       readiness: NEXUS_READINESS_SCHEMA_ID,
@@ -241,7 +244,7 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
       publicSurface: "live",
       clientSafe: true,
       liveActionsEnabled: false,
-      verifiedBy: ["/health", "/v1/readiness", "/v1/deployment", "/openapi.json", "/v1/verification-manifest"],
+      verifiedBy: ["/health", "/v1/readiness", "/v1/deployment", "/v1/data/freshness", "/openapi.json", "/v1/verification-manifest"],
     },
     capabilities: [
       {
@@ -261,6 +264,12 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         status: "live",
         route: "/v1/evidence-ledger",
         clientValue: "Publishes derived summaries, links, provenance, and stable hashes instead of raw payload dumps.",
+      },
+      {
+        label: "Data freshness",
+        status: "live",
+        route: "/v1/data/freshness",
+        clientValue: "Shows which checked-in snapshots need refresh before current client claims.",
       },
       {
         label: "Local model gateway",
@@ -287,6 +296,7 @@ export function buildVerificationManifest(origin: string, now = new Date()) {
     { id: "discovery", route: "/.well-known/sapphire-nexus.json", proves: "public route map and schema ids are discoverable" },
     { id: "openapi", route: "/openapi.json", proves: "client-readable API contract is published" },
     { id: "deployment", route: "/v1/deployment", proves: "safe Cloud Run revision identity is visible" },
+    { id: "dataFreshness", route: "/v1/data/freshness", proves: "checked-in data freshness is explicit before client claims" },
     { id: "clientBrief", route: "/v1/client/brief", proves: "client-safe summary is public and non-hype" },
     { id: "verificationManifest", route: "/v1/verification-manifest", proves: "verification contract is public and self-describing" },
     { id: "readiness", route: "/v1/readiness", proves: "public readiness rollup is usable" },

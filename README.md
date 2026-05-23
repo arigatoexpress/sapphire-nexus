@@ -76,6 +76,7 @@ local infrastructure.
 - `GET /llms.txt`
 - `GET /robots.txt`
 - `GET /v1/deployment`
+- `GET /v1/data/freshness`
 - `GET /v1/client/brief`
 - `GET /v1/verification-manifest`
 - `GET /v1/thesis`
@@ -122,6 +123,11 @@ hashes; it does not store raw private payloads.
 origin, provider, Cloud Run service/revision metadata when present, public mode,
 and the production verification checklist. It does not dump environment
 variables, read secrets, mutate infrastructure, or broaden permissions.
+
+`GET /v1/data/freshness` summarizes the freshness of checked-in data products
+before client claims. It reads only repository metadata, reports TTLs, caveats,
+manual-refresh requirements, and stable hashes, and never fetches remote
+sources or publishes raw payloads.
 
 `GET /openapi.json` exposes a small OpenAPI 3.1 contract for the read-only
 public API. It lists the public JSON routes, schema ids, and the disabled

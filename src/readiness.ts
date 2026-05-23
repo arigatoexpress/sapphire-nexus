@@ -3,6 +3,7 @@ import { checkAoeReadiness } from "./adapters/aoe.js";
 import { buildPublicSourcesReadiness } from "./adapters/public-sources.js";
 import { buildRepoMiningReadiness } from "./adapters/repo-mining.js";
 import { buildTrendingSignalsReadiness } from "./adapters/trending-signals.js";
+import { buildDataFreshness } from "./freshness.js";
 import {
   NEXUS_READINESS_SCHEMA_ID,
   buildHealth,
@@ -14,6 +15,7 @@ import {
 type ProbeId =
   | "health"
   | "evidenceLedger"
+  | "dataFreshness"
   | "repoMining"
   | "trendingSignals"
   | "publicSources"
@@ -27,6 +29,7 @@ type ProbeRunner = () => Promise<unknown> | unknown;
 const PROBE_ORDER: ProbeId[] = [
   "health",
   "evidenceLedger",
+  "dataFreshness",
   "repoMining",
   "trendingSignals",
   "publicSources",
@@ -46,6 +49,7 @@ export async function checkNexusReadiness(options: {
   const probes: Record<ProbeId, ProbeRunner> = {
     health: () => buildHealth(now),
     evidenceLedger: () => buildLandscapeEvidenceLedger(),
+    dataFreshness: () => buildDataFreshness("internal://readiness", undefined, now),
     repoMining: () => buildRepoMiningReadiness(undefined, now),
     trendingSignals: () => buildTrendingSignalsReadiness(undefined, now),
     publicSources: () => buildPublicSourcesReadiness(undefined, now),
@@ -138,6 +142,23 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
         detail: {
           records,
           rawPayloadsStored,
+        },
+      };
+    }
+    case "dataFreshness": {
+      const status = statusValue(summary.status);
+      const safety = plainRecord(record.safety);
+      const ready = status === "ready" && booleanValue(safety.fetchesRemoteSources) === false;
+      return {
+        status: ready ? "ready" : "degraded",
+        ready,
+        detail: {
+          datasets: numberValue(summary.datasets),
+          current: numberValue(summary.current),
+          snapshot: numberValue(summary.snapshot),
+          review: numberValue(summary.review),
+          manualRefreshRequiredForCurrentClaims: numberValue(summary.manualRefreshRequiredForCurrentClaims),
+          fetchesRemoteSources: booleanValue(safety.fetchesRemoteSources),
         },
       };
     }
@@ -267,6 +288,7 @@ function labelForProbe(id: ProbeId) {
   return {
     health: "Core health",
     evidenceLedger: "Evidence ledger",
+    dataFreshness: "Data freshness",
     repoMining: "Repo-mining adapter",
     trendingSignals: "Trending-signals adapter",
     publicSources: "Public-source rights adapter",
