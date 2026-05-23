@@ -11,6 +11,14 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
   const reusable = landscape.ownedRepoSignals.filter((repo) => !repo.repo.includes("0guard") && !repo.repo.includes("wildfire"));
   const topOpenSource = landscape.openSourceShortlist.slice(0, 6);
   const readinessTone = readiness.status === "ready" ? "ready" : "degraded";
+  const apiLinks = [
+    { label: "OpenAPI", path: "/openapi.json", detail: "client contract" },
+    { label: "Discovery", path: "/.well-known/sapphire-nexus.json", detail: "route map" },
+    { label: "Readiness", path: "/v1/readiness", detail: "operator status" },
+    { label: "Deployment", path: "/v1/deployment", detail: "live revision" },
+    { label: "Public Sources", path: "/v1/adapters/public-sources/readiness", detail: "rights posture" },
+    { label: "LLMs", path: "/llms.txt", detail: "AI-readable guide" },
+  ];
 
   return `<!doctype html>
 <html lang="en">
@@ -150,6 +158,24 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
     }
     .identity-item:last-child { border-bottom: 0; padding-bottom: 0; }
     .identity-label { color: var(--muted); font-size: 12px; }
+    .route-list { display: grid; gap: 8px; }
+    .route-link {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #101216;
+      color: var(--text);
+      text-decoration: none;
+      min-height: 46px;
+    }
+    .route-link:hover, .route-link:focus-visible { border-color: #40505f; outline: none; }
+    .route-title { display: block; color: #dce5f2; font-size: 13px; }
+    .route-path { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .route-detail { color: var(--cyan); font-size: 12px; white-space: nowrap; }
     .mono {
       color: #dce5f2;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -187,6 +213,8 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
       .grid { grid-template-columns: 1fr; padding: 14px; }
       .principles, .metric-row { grid-template-columns: 1fr; }
       .identity-item { grid-template-columns: 1fr; gap: 4px; }
+      .route-link { grid-template-columns: 1fr; }
+      .route-detail { white-space: normal; }
       .topbar { align-items: flex-start; flex-direction: column; }
       .thesis { font-size: 24px; }
     }
@@ -270,6 +298,19 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
             <div class="identity-item"><span class="identity-label">Service</span><span class="mono">${escapeHtml(displayValue(deployment.runtime.service))}</span></div>
             <div class="identity-item"><span class="identity-label">Revision</span><span class="mono">${escapeHtml(displayValue(deployment.runtime.revision))}</span></div>
             <div class="identity-item"><span class="identity-label">Mode</span><span class="mono">${deployment.mode.publicDeployment ? "public" : "local"} · live actions disabled</span></div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="section-head"><h2>API Surface</h2><span class="subtle">public contracts</span></div>
+        <div class="body">
+          <div class="route-list">
+            ${apiLinks
+              .map(
+                (link) =>
+                  `<a class="route-link" href="${escapeHtml(link.path)}"><span><span class="route-title">${escapeHtml(link.label)}</span><span class="route-path">${escapeHtml(link.path)}</span></span><span class="route-detail">${escapeHtml(link.detail)}</span></a>`,
+              )
+              .join("")}
           </div>
         </div>
       </section>
