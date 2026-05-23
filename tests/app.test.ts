@@ -81,4 +81,20 @@ describe("Sapphire Nexus API", () => {
     const market = await marketRes.json();
     expect(market.liveTradingAllowed).toBe(false);
   });
+
+  test("uses forwarded origin for public metadata links", async () => {
+    const headers = {
+      "x-forwarded-proto": "https",
+      "x-forwarded-host": "nexus.example.com",
+    };
+
+    const discoveryRes = await app.request("http://internal.local/.well-known/sapphire-nexus.json", { headers });
+    expect(discoveryRes.status).toBe(200);
+    const discovery = await discoveryRes.json();
+    expect(discovery.origin).toBe("https://nexus.example.com");
+
+    const robotsRes = await app.request("http://internal.local/robots.txt", { headers });
+    expect(robotsRes.status).toBe(200);
+    expect(await robotsRes.text()).toContain("llms.txt: https://nexus.example.com/llms.txt");
+  });
 });

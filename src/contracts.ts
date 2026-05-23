@@ -496,5 +496,19 @@ export function buildBlockedClaims() {
 
 export function publicOrigin(request: Request) {
   const url = new URL(request.url);
-  return `${url.protocol}//${url.host}`;
+  const host = firstForwardedValue(request.headers.get("x-forwarded-host")) ?? url.host;
+  const protocol = firstForwardedValue(request.headers.get("x-forwarded-proto")) ?? url.protocol.replace(":", "");
+  return `${safeProtocol(protocol)}://${safeHost(host, url.host)}`;
+}
+
+function firstForwardedValue(value: string | null) {
+  return value?.split(",")[0]?.trim() || null;
+}
+
+function safeProtocol(protocol: string) {
+  return protocol === "https" || protocol === "http" ? protocol : "https";
+}
+
+function safeHost(host: string, fallback: string) {
+  return /^[A-Za-z0-9.-]+(?::\d+)?$/.test(host) ? host : fallback;
 }
