@@ -1,5 +1,5 @@
 import type { Landscape } from "./contracts.js";
-import { buildClientBrief, buildOperatorNextActions, buildSafetyBoundary } from "./contracts.js";
+import { buildClientBrief, buildOperatorNextActions, buildSafetyBoundary, buildVerificationManifest } from "./contracts.js";
 import type { buildDeploymentIdentity } from "./deployment.js";
 import type { checkNexusReadiness } from "./readiness.js";
 
@@ -12,11 +12,13 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
   const topOpenSource = landscape.openSourceShortlist.slice(0, 6);
   const readinessTone = readiness.status === "ready" ? "ready" : "degraded";
   const clientBrief = buildClientBrief(deployment.origin, landscape);
+  const verification = buildVerificationManifest(deployment.origin);
   const nextActions = buildOperatorNextActions();
   const apiLinks = [
     { label: "OpenAPI", path: "/openapi.json", detail: "client contract" },
     { label: "Discovery", path: "/.well-known/sapphire-nexus.json", detail: "route map" },
     { label: "Client Brief", path: "/v1/client/brief", detail: "public handoff" },
+    { label: "Verification", path: "/v1/verification-manifest", detail: "claim checks" },
     { label: "Readiness", path: "/v1/readiness", detail: "operator status" },
     { label: "Deployment", path: "/v1/deployment", detail: "live revision" },
     { label: "Public Sources", path: "/v1/adapters/public-sources/readiness", detail: "rights posture" },
@@ -315,6 +317,25 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
               .map(
                 (capability) =>
                   `<div class="check"><div><div class="check-name">${escapeHtml(capability.label)}</div><div class="check-detail">${escapeHtml(capability.clientValue)}</div></div><span class="badge ${escapeHtml(capability.status)}">${escapeHtml(capability.status)}</span></div>`,
+              )
+              .join("")}
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="section-head"><h2>Verification</h2><span class="subtle">claim checks</span></div>
+        <div class="body">
+          <div class="metric-row">
+            <div class="metric"><strong>${verification.summary.checks}</strong><span class="subtle">public checks</span></div>
+            <div class="metric"><strong>${verification.summary.requiredHeaders}</strong><span class="subtle">hardening headers</span></div>
+            <div class="metric"><strong>0</strong><span class="subtle">live actions</span></div>
+          </div>
+          <div class="check-list">
+            ${verification.checks
+              .slice(0, 4)
+              .map(
+                (check) =>
+                  `<div class="check"><div><div class="check-name">${escapeHtml(check.id)}</div><div class="check-detail">${escapeHtml(check.route)} · ${escapeHtml(check.proves)}</div></div><span class="badge ready">check</span></div>`,
               )
               .join("")}
           </div>

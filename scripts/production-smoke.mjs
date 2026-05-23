@@ -23,6 +23,7 @@ const checks = [
       body.routes?.readiness === "/v1/readiness" &&
       body.routes?.deployment === "/v1/deployment" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
+      body.routes?.verificationManifest === "/v1/verification-manifest" &&
       body.routes?.openApi === "/openapi.json" &&
       body.routes?.operatorNextActions === "/v1/operator/next-actions",
   },
@@ -33,6 +34,7 @@ const checks = [
       body.openapi === "3.1.0" &&
       body.servers?.[0]?.url === expectedOrigin &&
       body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
+      body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
       body.paths?.["/v1/readiness"]?.get?.operationId === "readiness" &&
       body.paths?.["/v1/operator/next-actions"]?.get?.operationId === "operatorNextActions" &&
       body["x-sapphire-nexus"]?.liveActionsEnabled === false,
@@ -57,6 +59,16 @@ const checks = [
       body.product?.publicUrl === expectedOrigin &&
       body.productionStatus?.liveActionsEnabled === false &&
       body.safety?.rawPayloadsPublished === false,
+  },
+  {
+    id: "verificationManifest",
+    path: "/v1/verification-manifest",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.verification_manifest.v1" &&
+      body.origin === expectedOrigin &&
+      body.summary?.productionClaimsRequireRevisionMatch === true &&
+      body.requiredHeaders?.["x-content-type-options"] === "nosniff" &&
+      body.safety?.requiresPrivateNetwork === false,
   },
   {
     id: "readiness",
@@ -89,6 +101,8 @@ const checks = [
       text.includes("Deployment Identity") &&
       text.includes("Client Brief") &&
       text.includes("/v1/client/brief") &&
+      text.includes("Verification") &&
+      text.includes("/v1/verification-manifest") &&
       text.includes("API Surface") &&
       text.includes("/openapi.json") &&
       text.includes("Next Actions") &&

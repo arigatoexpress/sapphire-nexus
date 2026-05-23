@@ -9,6 +9,7 @@ import {
   buildMarketResearchPosture,
   buildModelGateway,
   buildOperatorNextActions,
+  buildVerificationManifest,
   checkModelGatewayReadiness,
   checkModelPromptSmoke,
   buildThesis,
@@ -42,6 +43,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.openApi).toBe("sapphire.nexus.openapi.v1");
     expect(wellKnown.routes.clientBrief).toBe("/v1/client/brief");
     expect(wellKnown.schemaIds.clientBrief).toBe("sapphire.nexus.client_brief.v1");
+    expect(wellKnown.routes.verificationManifest).toBe("/v1/verification-manifest");
+    expect(wellKnown.schemaIds.verificationManifest).toBe("sapphire.nexus.verification_manifest.v1");
     expect(wellKnown.routes.deployment).toBe("/v1/deployment");
     expect(wellKnown.schemaIds.deployment).toBe("sapphire.nexus.deployment_identity.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
@@ -534,6 +537,22 @@ describe("Sapphire Nexus contracts", () => {
     expect(brief.safety.rawPayloadsPublished).toBe(false);
     expect(brief.safety.promisesProductionTrading).toBe(false);
     expect(brief.safety.exposesPrivateInfrastructure).toBe(false);
+  });
+
+  test("verification manifest describes public checks without private access", () => {
+    const manifest = buildVerificationManifest("https://nexus.example.com", new Date("2026-05-23T20:10:00.000Z"));
+
+    expect(manifest.schemaId).toBe("sapphire.nexus.verification_manifest.v1");
+    expect(manifest.origin).toBe("https://nexus.example.com");
+    expect(manifest.summary.checks).toBe(12);
+    expect(manifest.summary.requiredHeaders).toBeGreaterThanOrEqual(5);
+    expect(manifest.summary.productionClaimsRequireRevisionMatch).toBe(true);
+    expect(manifest.checks.map((check) => check.route)).toContain("/v1/deployment");
+    expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/brief");
+    expect(manifest.requiredHeaders["x-frame-options"]).toBe("DENY");
+    expect(manifest.commands.productionSmoke).toContain("SAPPHIRE_NEXUS_EXPECTED_REVISION");
+    expect(manifest.safety.liveTradingAllowed).toBe(false);
+    expect(manifest.safety.requiresPrivateNetwork).toBe(false);
   });
 
   test("server config binds to Cloud Run host and port when deployed", () => {

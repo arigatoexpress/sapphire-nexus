@@ -7,6 +7,7 @@ import { AOE_ADAPTER_READINESS_SCHEMA_ID } from "./adapters/aoe.js";
 import { AGENT_RUNTIME_PUBLICATION_ADAPTER_SCHEMA_ID } from "./adapters/agent-runtime.js";
 import { DEPLOYMENT_IDENTITY_SCHEMA_ID, isPublicDeployment, publicDeploymentReason } from "./deployment.js";
 import { EVIDENCE_LEDGER_SCHEMA_ID, buildEvidenceLedger } from "./evidence.js";
+import { PUBLIC_RESPONSE_HEADERS } from "./response-headers.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -21,6 +22,7 @@ export const MODEL_PROMPT_SMOKE_SCHEMA_ID = "sapphire.nexus.model_prompt_smoke.v
 export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture.v1";
 export const OPERATOR_NEXT_ACTIONS_SCHEMA_ID = "sapphire.nexus.operator_next_actions.v1";
 export const CLIENT_BRIEF_SCHEMA_ID = "sapphire.nexus.client_brief.v1";
+export const VERIFICATION_MANIFEST_SCHEMA_ID = "sapphire.nexus.verification_manifest.v1";
 const FIXED_PROMPT_SMOKE_PROMPT = "Return exactly the token NEXUS_OK.";
 
 const LandscapeSchema = z.object({
@@ -104,6 +106,7 @@ export function buildWellKnown(origin: string) {
       marketResearchPosture: "/v1/market/research-posture",
       operatorNextActions: "/v1/operator/next-actions",
       clientBrief: "/v1/client/brief",
+      verificationManifest: "/v1/verification-manifest",
     },
     schemaIds: {
       health: HEALTH_SCHEMA_ID,
@@ -122,6 +125,7 @@ export function buildWellKnown(origin: string) {
       marketResearchPosture: MARKET_RESEARCH_SCHEMA_ID,
       operatorNextActions: OPERATOR_NEXT_ACTIONS_SCHEMA_ID,
       clientBrief: CLIENT_BRIEF_SCHEMA_ID,
+      verificationManifest: VERIFICATION_MANIFEST_SCHEMA_ID,
     },
     safety: buildSafetyBoundary(),
   };
@@ -233,7 +237,7 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
       publicSurface: "live",
       clientSafe: true,
       liveActionsEnabled: false,
-      verifiedBy: ["/health", "/v1/readiness", "/v1/deployment", "/openapi.json"],
+      verifiedBy: ["/health", "/v1/readiness", "/v1/deployment", "/openapi.json", "/v1/verification-manifest"],
     },
     capabilities: [
       {
@@ -269,6 +273,48 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
       clientSendsAllowed: false,
       promisesProductionTrading: false,
       exposesPrivateInfrastructure: false,
+    },
+  };
+}
+
+export function buildVerificationManifest(origin: string, now = new Date()) {
+  const checks = [
+    { id: "health", route: "/health", proves: "service is reachable and live actions are disabled" },
+    { id: "discovery", route: "/.well-known/sapphire-nexus.json", proves: "public route map and schema ids are discoverable" },
+    { id: "openapi", route: "/openapi.json", proves: "client-readable API contract is published" },
+    { id: "deployment", route: "/v1/deployment", proves: "safe Cloud Run revision identity is visible" },
+    { id: "clientBrief", route: "/v1/client/brief", proves: "client-safe summary is public and non-hype" },
+    { id: "verificationManifest", route: "/v1/verification-manifest", proves: "verification contract is public and self-describing" },
+    { id: "readiness", route: "/v1/readiness", proves: "public readiness rollup is usable" },
+    { id: "publicSources", route: "/v1/adapters/public-sources/readiness", proves: "source-rights posture is explicit" },
+    { id: "operatorNextActions", route: "/v1/operator/next-actions", proves: "agent-safe and Ari-only lanes are separated" },
+    { id: "workbench", route: "/", proves: "operator UI renders the public-safe panels" },
+    { id: "llms", route: "/llms.txt", proves: "AI-readable public guide is available" },
+    { id: "robots", route: "/robots.txt", proves: "crawler guidance points at llms.txt" },
+  ];
+
+  return {
+    schemaId: VERIFICATION_MANIFEST_SCHEMA_ID,
+    generatedAt: now.toISOString(),
+    origin,
+    summary: {
+      checks: checks.length,
+      requiredHeaders: Object.keys(PUBLIC_RESPONSE_HEADERS).length,
+      liveActionsEnabled: false,
+      productionClaimsRequireRevisionMatch: true,
+    },
+    checks,
+    requiredHeaders: PUBLIC_RESPONSE_HEADERS,
+    commands: {
+      productionSmoke: "SAPPHIRE_NEXUS_EXPECTED_REVISION=<revision> node scripts/production-smoke.mjs <public-url>",
+      revisionSource: "/v1/deployment",
+    },
+    safety: {
+      ...buildSafetyBoundary(),
+      mutatesRuntime: false,
+      readsSecrets: false,
+      sendsExternalMessages: false,
+      requiresPrivateNetwork: false,
     },
   };
 }
