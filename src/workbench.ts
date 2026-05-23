@@ -1,5 +1,5 @@
 import type { Landscape } from "./contracts.js";
-import { buildOperatorNextActions, buildSafetyBoundary } from "./contracts.js";
+import { buildClientBrief, buildOperatorNextActions, buildSafetyBoundary } from "./contracts.js";
 import type { buildDeploymentIdentity } from "./deployment.js";
 import type { checkNexusReadiness } from "./readiness.js";
 
@@ -11,10 +11,12 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
   const reusable = landscape.ownedRepoSignals.filter((repo) => !repo.repo.includes("0guard") && !repo.repo.includes("wildfire"));
   const topOpenSource = landscape.openSourceShortlist.slice(0, 6);
   const readinessTone = readiness.status === "ready" ? "ready" : "degraded";
+  const clientBrief = buildClientBrief(deployment.origin, landscape);
   const nextActions = buildOperatorNextActions();
   const apiLinks = [
     { label: "OpenAPI", path: "/openapi.json", detail: "client contract" },
     { label: "Discovery", path: "/.well-known/sapphire-nexus.json", detail: "route map" },
+    { label: "Client Brief", path: "/v1/client/brief", detail: "public handoff" },
     { label: "Readiness", path: "/v1/readiness", detail: "operator status" },
     { label: "Deployment", path: "/v1/deployment", detail: "live revision" },
     { label: "Public Sources", path: "/v1/adapters/public-sources/readiness", detail: "rights posture" },
@@ -301,6 +303,20 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
             <div class="identity-item"><span class="identity-label">Service</span><span class="mono">${escapeHtml(displayValue(deployment.runtime.service))}</span></div>
             <div class="identity-item"><span class="identity-label">Revision</span><span class="mono">${escapeHtml(displayValue(deployment.runtime.revision))}</span></div>
             <div class="identity-item"><span class="identity-label">Mode</span><span class="mono">${deployment.mode.publicDeployment ? "public" : "local"} · live actions disabled</span></div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="section-head"><h2>Client Brief</h2><span class="subtle">public-safe handoff</span></div>
+        <div class="body">
+          <div class="pill">${escapeHtml(clientBrief.product.oneLine)}</div>
+          <div class="check-list">
+            ${clientBrief.capabilities
+              .map(
+                (capability) =>
+                  `<div class="check"><div><div class="check-name">${escapeHtml(capability.label)}</div><div class="check-detail">${escapeHtml(capability.clientValue)}</div></div><span class="badge ${escapeHtml(capability.status)}">${escapeHtml(capability.status)}</span></div>`,
+              )
+              .join("")}
           </div>
         </div>
       </section>

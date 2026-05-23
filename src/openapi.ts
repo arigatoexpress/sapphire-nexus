@@ -23,6 +23,7 @@ export function buildOpenApiSpec(origin: string) {
       [
         route("health", discovery.routes.health, "Core health", discovery.schemaIds.health),
         route("deployment", discovery.routes.deployment, "Safe deployment identity", discovery.schemaIds.deployment),
+        route("clientBrief", discovery.routes.clientBrief, "Client-safe production brief", discovery.schemaIds.clientBrief),
         route("discovery", "/.well-known/sapphire-nexus.json", "Machine-readable route discovery", discovery.schemaId),
         route("thesis", discovery.routes.thesis, "Product thesis and protected boundaries", discovery.schemaIds.thesis),
         route("landscape", discovery.routes.landscape, "Rights-aware landscape catalog", discovery.schemaIds.landscape),

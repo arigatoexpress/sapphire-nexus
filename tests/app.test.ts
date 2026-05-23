@@ -23,6 +23,8 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("live actions disabled");
     expect(html).toContain("Readiness");
     expect(html).toContain("Deployment Identity");
+    expect(html).toContain("Client Brief");
+    expect(html).toContain("/v1/client/brief");
     expect(html).toContain("API Surface");
     expect(html).toContain("/openapi.json");
     expect(html).toContain("/v1/operator/next-actions");
@@ -51,6 +53,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.llmsTxt).toBe("/llms.txt");
     expect(discovery.routes.robotsTxt).toBe("/robots.txt");
     expect(discovery.routes.deployment).toBe("/v1/deployment");
+    expect(discovery.routes.clientBrief).toBe("/v1/client/brief");
     expect(discovery.routes.publicSourcesReadiness).toBe("/v1/adapters/public-sources/readiness");
     expect(discovery.routes.operatorNextActions).toBe("/v1/operator/next-actions");
 
@@ -73,6 +76,7 @@ describe("Sapphire Nexus API", () => {
     const openApi = await openApiRes.json();
     expect(openApi.openapi).toBe("3.1.0");
     expect(openApi.servers[0].url).toBe("http://127.0.0.1:4420");
+    expect(openApi.paths["/v1/client/brief"].get.operationId).toBe("clientBrief");
     expect(openApi.paths["/v1/readiness"].get.operationId).toBe("readiness");
     expect(openApi.paths["/v1/operator/next-actions"].get.operationId).toBe("operatorNextActions");
     expect(openApi["x-sapphire-nexus"].liveActionsEnabled).toBe(false);
@@ -84,6 +88,15 @@ describe("Sapphire Nexus API", () => {
     expect(deployment.origin).toBe("http://127.0.0.1:4420");
     expect(deployment.mode.liveActionsEnabled).toBe(false);
     expect(deployment.safety.exposesEnvironmentDump).toBe(false);
+
+    const clientBriefRes = await app.request("http://127.0.0.1:4420/v1/client/brief");
+    expect(clientBriefRes.status).toBe(200);
+    const clientBrief = await clientBriefRes.json();
+    expect(clientBrief.schemaId).toBe("sapphire.nexus.client_brief.v1");
+    expect(clientBrief.product.publicUrl).toBe("http://127.0.0.1:4420");
+    expect(clientBrief.productionStatus.liveActionsEnabled).toBe(false);
+    expect(clientBrief.safety.rawPayloadsPublished).toBe(false);
+    expect(clientBrief.blockedClaims).toContain("production trading");
 
     const landscapeRes = await app.request("/v1/landscape");
     expect(landscapeRes.status).toBe(200);

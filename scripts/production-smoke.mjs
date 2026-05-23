@@ -22,6 +22,7 @@ const checks = [
       body.origin === expectedOrigin &&
       body.routes?.readiness === "/v1/readiness" &&
       body.routes?.deployment === "/v1/deployment" &&
+      body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.openApi === "/openapi.json" &&
       body.routes?.operatorNextActions === "/v1/operator/next-actions",
   },
@@ -31,6 +32,7 @@ const checks = [
     validate: (body) =>
       body.openapi === "3.1.0" &&
       body.servers?.[0]?.url === expectedOrigin &&
+      body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
       body.paths?.["/v1/readiness"]?.get?.operationId === "readiness" &&
       body.paths?.["/v1/operator/next-actions"]?.get?.operationId === "operatorNextActions" &&
       body["x-sapphire-nexus"]?.liveActionsEnabled === false,
@@ -46,6 +48,15 @@ const checks = [
       body.safety?.readsSecrets === false &&
       body.safety?.exposesEnvironmentDump === false,
     detail: (body) => ({ revision: body.runtime?.revision ?? null, expectedRevision: expectedRevision ?? null }),
+  },
+  {
+    id: "clientBrief",
+    path: "/v1/client/brief",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.client_brief.v1" &&
+      body.product?.publicUrl === expectedOrigin &&
+      body.productionStatus?.liveActionsEnabled === false &&
+      body.safety?.rawPayloadsPublished === false,
   },
   {
     id: "readiness",
@@ -76,6 +87,8 @@ const checks = [
       text.includes("Sapphire Nexus") &&
       text.includes("Readiness") &&
       text.includes("Deployment Identity") &&
+      text.includes("Client Brief") &&
+      text.includes("/v1/client/brief") &&
       text.includes("API Surface") &&
       text.includes("/openapi.json") &&
       text.includes("Next Actions") &&
