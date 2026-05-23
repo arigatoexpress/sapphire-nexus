@@ -1,0 +1,9 @@
+.git
+.vercel
+.playwright-cli
+coverage
+dist
+node_modules
+.env
+.env.*
+npm-debug.log*
