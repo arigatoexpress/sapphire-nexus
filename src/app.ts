@@ -13,6 +13,7 @@ import {
   loadLandscape,
   publicOrigin,
 } from "./contracts.js";
+import { buildLlmsTxt, buildRobotsTxt } from "./public-metadata.js";
 import { checkNexusReadiness } from "./readiness.js";
 import { renderWorkbench } from "./workbench.js";
 
@@ -29,6 +30,18 @@ export function createApp() {
   );
   app.get("/health", (c) => c.json(buildHealth()));
   app.get("/.well-known/sapphire-nexus.json", (c) => c.json(buildWellKnown(publicOrigin(c.req.raw))));
+  app.get("/llms.txt", (c) =>
+    c.text(buildLlmsTxt(publicOrigin(c.req.raw)), 200, {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+    }),
+  );
+  app.get("/robots.txt", (c) =>
+    c.text(buildRobotsTxt(publicOrigin(c.req.raw)), 200, {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+    }),
+  );
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
   app.get("/v1/readiness", async (c) => c.json(await checkNexusReadiness()));

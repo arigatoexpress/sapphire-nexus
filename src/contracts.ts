@@ -85,6 +85,8 @@ export function buildWellKnown(origin: string) {
     origin,
     routes: {
       health: "/health",
+      llmsTxt: "/llms.txt",
+      robotsTxt: "/robots.txt",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
       readiness: "/v1/readiness",

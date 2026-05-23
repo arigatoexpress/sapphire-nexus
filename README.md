@@ -59,6 +59,8 @@ local infrastructure.
 - `GET /`
 - `GET /health`
 - `GET /.well-known/sapphire-nexus.json`
+- `GET /llms.txt`
+- `GET /robots.txt`
 - `GET /v1/thesis`
 - `GET /v1/landscape`
 - `GET /v1/readiness`
@@ -94,6 +96,11 @@ fallbacks, training jobs, or runtime mutations.
 `GET /v1/evidence-ledger` turns the landscape catalog into stable, hash-addressed
 evidence records. It stores links, source ids, rights metadata, summaries, and
 hashes; it does not store raw private payloads.
+
+`GET /llms.txt` and `GET /robots.txt` expose public metadata for AI agents,
+crawlers, and operators. They summarize the public routes, source-rights
+posture, and hard safety boundaries without exposing private data or local
+adapter details.
 
 `GET /v1/adapters/aoe/readiness` reads AOE's public health, discovery,
 readiness, and contract endpoints and keeps only summaries. It does not settle
