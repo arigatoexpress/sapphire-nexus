@@ -62,7 +62,11 @@ const checks = [
     id: "workbench",
     path: "/",
     validateText: (text) =>
-      text.includes("Sapphire Nexus") && text.includes("Readiness") && text.includes("Deployment Identity"),
+      text.includes("Sapphire Nexus") &&
+      text.includes("Readiness") &&
+      text.includes("Deployment Identity") &&
+      text.includes("API Surface") &&
+      text.includes("/openapi.json"),
   },
   {
     id: "llms",
