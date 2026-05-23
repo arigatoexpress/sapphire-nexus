@@ -43,7 +43,12 @@ const checks = [
       body.summary?.status === "ready" &&
       body.safety?.rawPayloadsStored === false,
   },
-  { id: "workbench", path: "/", validateText: (text) => text.includes("Sapphire Nexus") && text.includes("Readiness") },
+  {
+    id: "workbench",
+    path: "/",
+    validateText: (text) =>
+      text.includes("Sapphire Nexus") && text.includes("Readiness") && text.includes("Deployment Identity"),
+  },
   {
     id: "llms",
     path: "/llms.txt",
