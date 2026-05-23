@@ -17,7 +17,18 @@ const checks = [
   {
     id: "discovery",
     path: "/.well-known/sapphire-nexus.json",
-    validate: (body) => body.origin === expectedOrigin && body.routes?.readiness === "/v1/readiness",
+    validate: (body) =>
+      body.origin === expectedOrigin && body.routes?.readiness === "/v1/readiness" && body.routes?.deployment === "/v1/deployment",
+  },
+  {
+    id: "deployment",
+    path: "/v1/deployment",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.deployment_identity.v1" &&
+      body.origin === expectedOrigin &&
+      body.mode?.liveActionsEnabled === false &&
+      body.safety?.readsSecrets === false &&
+      body.safety?.exposesEnvironmentDump === false,
   },
   {
     id: "readiness",

@@ -14,6 +14,7 @@ import {
   loadLandscape,
 } from "../src/contracts.js";
 import { checkNexusReadiness } from "../src/readiness.js";
+import { buildDeploymentIdentity } from "../src/deployment.js";
 import { resolveServerConfig } from "../src/server-config.js";
 
 describe("Sapphire Nexus contracts", () => {
@@ -35,6 +36,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(health.liveActionsEnabled).toBe(false);
 
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
+    expect(wellKnown.routes.deployment).toBe("/v1/deployment");
+    expect(wellKnown.schemaIds.deployment).toBe("sapphire.nexus.deployment_identity.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(wellKnown.routes.readiness).toBe("/v1/readiness");
     expect(wellKnown.schemaIds.readiness).toBe("sapphire.nexus.readiness.v1");
@@ -57,6 +60,31 @@ describe("Sapphire Nexus contracts", () => {
     expect(thesis.preserveAsProducts).toContain("0guard");
     expect(thesis.blockedClaims).toContain("THO or Project-Go-Forward ownership");
     expect(thesis.architecture).toContain("local model gateway contract");
+  });
+
+  test("deployment identity exposes only safe runtime metadata", () => {
+    const identity = buildDeploymentIdentity(
+      "https://nexus.example.com",
+      {
+        SAPPHIRE_NEXUS_PUBLIC_MODE: "true",
+        K_SERVICE: "sapphire-nexus",
+        K_REVISION: "sapphire-nexus-00006-b8f",
+        K_CONFIGURATION: "sapphire-nexus",
+        SECRET_TOKEN: "do-not-leak",
+      },
+      new Date("2026-05-23T06:50:00.000Z"),
+    );
+
+    expect(identity.schemaId).toBe("sapphire.nexus.deployment_identity.v1");
+    expect(identity.origin).toBe("https://nexus.example.com");
+    expect(identity.runtime.provider).toBe("cloud-run");
+    expect(identity.runtime.revision).toBe("sapphire-nexus-00006-b8f");
+    expect(identity.mode.publicDeployment).toBe(true);
+    expect(identity.mode.liveActionsEnabled).toBe(false);
+    expect(identity.safety.readsSecrets).toBe(false);
+    expect(identity.safety.exposesEnvironmentDump).toBe(false);
+    expect(JSON.stringify(identity)).not.toContain("do-not-leak");
+    expect(JSON.stringify(identity)).not.toContain("SECRET_TOKEN");
   });
 
   test("evidence ledger stores stable hashes and no raw payloads", () => {

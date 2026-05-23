@@ -14,6 +14,7 @@ import {
   loadLandscape,
   publicOrigin,
 } from "./contracts.js";
+import { buildDeploymentIdentity } from "./deployment.js";
 import { buildLlmsTxt, buildRobotsTxt } from "./public-metadata.js";
 import { checkNexusReadiness } from "./readiness.js";
 import { PUBLIC_RESPONSE_HEADERS } from "./response-headers.js";
@@ -52,6 +53,7 @@ export function createApp() {
     }),
   );
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
+  app.get("/v1/deployment", (c) => c.json(buildDeploymentIdentity(publicOrigin(c.req.raw))));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
   app.get("/v1/readiness", async (c) => c.json(await checkNexusReadiness()));
   app.get("/v1/evidence-ledger", (c) => c.json(buildLandscapeEvidenceLedger()));
