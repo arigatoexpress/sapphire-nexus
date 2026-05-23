@@ -12,6 +12,7 @@ Status: read-only public surface; live actions disabled.
 - GET /.well-known/sapphire-nexus.json
 - GET /openapi.json
 - GET /v1/deployment
+- GET /v1/data/freshness
 - GET /v1/client/brief
 - GET /v1/verification-manifest
 - GET /v1/readiness

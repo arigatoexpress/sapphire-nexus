@@ -18,6 +18,7 @@ import {
   buildWellKnown,
   loadLandscape,
 } from "../src/contracts.js";
+import { buildDataFreshness } from "../src/freshness.js";
 import { checkNexusReadiness } from "../src/readiness.js";
 import { buildDeploymentIdentity } from "../src/deployment.js";
 import { resolveServerConfig } from "../src/server-config.js";
@@ -49,6 +50,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.verificationManifest).toBe("sapphire.nexus.verification_manifest.v1");
     expect(wellKnown.routes.deployment).toBe("/v1/deployment");
     expect(wellKnown.schemaIds.deployment).toBe("sapphire.nexus.deployment_identity.v1");
+    expect(wellKnown.routes.dataFreshness).toBe("/v1/data/freshness");
+    expect(wellKnown.schemaIds.dataFreshness).toBe("sapphire.nexus.data_freshness.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(wellKnown.routes.repoMiningReadiness).toBe("/v1/adapters/repo-mining/readiness");
     expect(wellKnown.schemaIds.repoMiningReadiness).toBe("sapphire.nexus.adapter.repo_mining.v1");
@@ -168,6 +171,24 @@ describe("Sapphire Nexus contracts", () => {
     expect(report.policy.refreshRequiredBeforeClientTrendClaims).toBe(true);
     expect(report.signals[0].rights.reusePosture).toBe("metadata_snapshot_only");
     expect(report.signals[0].sourceHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+  });
+
+  test("data freshness contract caveats checked-in snapshots before client claims", () => {
+    const report = buildDataFreshness("https://nexus.example.com", loadLandscape(), new Date("2026-05-23T23:34:00.000Z"));
+
+    expect(report.schemaId).toBe("sapphire.nexus.data_freshness.v1");
+    expect(report.origin).toBe("https://nexus.example.com");
+    expect(report.summary.status).toBe("ready");
+    expect(report.summary.datasets).toBe(5);
+    expect(report.summary.manualRefreshRequiredForCurrentClaims).toBeGreaterThanOrEqual(1);
+    expect(report.safety.fetchesRemoteSources).toBe(false);
+    expect(report.safety.storesRawPayloads).toBe(false);
+    expect(report.policy.checkedInMetadataOnly).toBe(true);
+    expect(report.policy.currentTrendClaimsRequireManualRefresh).toBe(true);
+    expect(report.datasets.map((dataset) => dataset.id)).toContain("trendingSignals");
+    expect(report.datasets.find((dataset) => dataset.id === "trendingSignals")?.currentClaimsAllowed).toBe(false);
+    expect(report.datasets.find((dataset) => dataset.id === "trendingSignals")?.manualRefreshRequiredForCurrentClaims).toBe(true);
+    expect(report.datasets[0].freshnessHash).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
 
   test("AOE adapter summarizes public contracts without storing raw bundles", async () => {
@@ -477,6 +498,18 @@ describe("Sapphire Nexus contracts", () => {
           summary: { records: 41 },
           rawPayload: "PRIVATE_SAMPLE",
         }),
+        dataFreshness: () => ({
+          safety: { fetchesRemoteSources: false },
+          summary: {
+            status: "ready",
+            datasets: 5,
+            current: 4,
+            snapshot: 0,
+            review: 1,
+            manualRefreshRequiredForCurrentClaims: 1,
+          },
+          rawPayload: "PRIVATE_FRESHNESS_SAMPLE",
+        }),
         repoMining: () => ({
           safety: { fetchesRemoteSources: false, vendorsCode: false, deletesSourceRepos: false },
           summary: { status: "ready", repos: 9, mineSignals: 22, avoidSignals: 11, protectedLanesPreserved: 6 },
@@ -519,11 +552,12 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(report.schemaId).toBe("sapphire.nexus.readiness.v1");
     expect(report.status).toBe("ready");
-    expect(report.summary).toEqual({ checks: 9, ready: 8, degraded: 0, disabled: 1, productionUsable: true });
+    expect(report.summary).toEqual({ checks: 10, ready: 9, degraded: 0, disabled: 1, productionUsable: true });
     expect(report.safety.liveActionsEnabled).toBe(false);
     expect(report.checks.map((check) => check.id)).toEqual([
       "health",
       "evidenceLedger",
+      "dataFreshness",
       "repoMining",
       "trendingSignals",
       "publicSources",
@@ -534,6 +568,7 @@ describe("Sapphire Nexus contracts", () => {
     ]);
     expect(report.checks.find((check) => check.id === "modelPromptSmoke")?.status).toBe("disabled");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_SAMPLE");
+    expect(JSON.stringify(report)).not.toContain("PRIVATE_FRESHNESS_SAMPLE");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_REPO_SAMPLE");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_TREND_SAMPLE");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_SOURCE_SAMPLE");
@@ -546,7 +581,7 @@ describe("Sapphire Nexus contracts", () => {
     });
 
     expect(report.status).toBe("ready");
-    expect(report.summary.ready).toBe(5);
+    expect(report.summary.ready).toBe(6);
     expect(report.summary.degraded).toBe(0);
     expect(report.summary.disabled).toBe(4);
     expect(report.summary.productionUsable).toBe(true);
@@ -609,10 +644,11 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(manifest.schemaId).toBe("sapphire.nexus.verification_manifest.v1");
     expect(manifest.origin).toBe("https://nexus.example.com");
-    expect(manifest.summary.checks).toBe(14);
+    expect(manifest.summary.checks).toBe(15);
     expect(manifest.summary.requiredHeaders).toBeGreaterThanOrEqual(5);
     expect(manifest.summary.productionClaimsRequireRevisionMatch).toBe(true);
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/deployment");
+    expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/freshness");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/brief");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/repo-mining/readiness");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/trending-signals/readiness");

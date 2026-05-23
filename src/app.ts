@@ -20,6 +20,7 @@ import {
   publicOrigin,
 } from "./contracts.js";
 import { buildDeploymentIdentity } from "./deployment.js";
+import { buildDataFreshness } from "./freshness.js";
 import { buildOpenApiSpec } from "./openapi.js";
 import { buildLlmsTxt, buildRobotsTxt } from "./public-metadata.js";
 import { checkNexusReadiness } from "./readiness.js";
@@ -65,6 +66,7 @@ export function createApp() {
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
   app.get("/v1/client/brief", (c) => c.json(buildClientBrief(publicOrigin(c.req.raw))));
   app.get("/v1/deployment", (c) => c.json(buildDeploymentIdentity(publicOrigin(c.req.raw))));
+  app.get("/v1/data/freshness", (c) => c.json(buildDataFreshness(publicOrigin(c.req.raw))));
   app.get("/v1/verification-manifest", (c) => c.json(buildVerificationManifest(publicOrigin(c.req.raw))));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
   app.get("/v1/readiness", async (c) => c.json(await checkNexusReadiness()));
