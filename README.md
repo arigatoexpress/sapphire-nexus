@@ -66,6 +66,7 @@ local infrastructure.
 - `GET /.well-known/sapphire-nexus.json`
 - `GET /llms.txt`
 - `GET /robots.txt`
+- `GET /v1/deployment`
 - `GET /v1/thesis`
 - `GET /v1/landscape`
 - `GET /v1/readiness`
@@ -102,6 +103,11 @@ fallbacks, training jobs, or runtime mutations.
 `GET /v1/evidence-ledger` turns the landscape catalog into stable, hash-addressed
 evidence records. It stores links, source ids, rights metadata, summaries, and
 hashes; it does not store raw private payloads.
+
+`GET /v1/deployment` exposes a safe deployment identity for operators:
+origin, provider, Cloud Run service/revision metadata when present, public mode,
+and the production verification checklist. It does not dump environment
+variables, read secrets, mutate infrastructure, or broaden permissions.
 
 `GET /v1/adapters/public-sources/readiness` summarizes the public open-source
 shortlist as a rights-cleared adapter. It classifies permissive references,

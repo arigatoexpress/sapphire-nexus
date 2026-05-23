@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { AOE_ADAPTER_READINESS_SCHEMA_ID } from "./adapters/aoe.js";
 import { AGENT_RUNTIME_PUBLICATION_ADAPTER_SCHEMA_ID } from "./adapters/agent-runtime.js";
-import { isPublicDeployment, publicDeploymentReason } from "./deployment.js";
+import { DEPLOYMENT_IDENTITY_SCHEMA_ID, isPublicDeployment, publicDeploymentReason } from "./deployment.js";
 import { EVIDENCE_LEDGER_SCHEMA_ID, buildEvidenceLedger } from "./evidence.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -87,6 +87,7 @@ export function buildWellKnown(origin: string) {
       health: "/health",
       llmsTxt: "/llms.txt",
       robotsTxt: "/robots.txt",
+      deployment: "/v1/deployment",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
       readiness: "/v1/readiness",
@@ -101,6 +102,7 @@ export function buildWellKnown(origin: string) {
     },
     schemaIds: {
       health: HEALTH_SCHEMA_ID,
+      deployment: DEPLOYMENT_IDENTITY_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
       readiness: NEXUS_READINESS_SCHEMA_ID,
