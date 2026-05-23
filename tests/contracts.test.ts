@@ -7,6 +7,7 @@ import {
   buildLandscapeEvidenceLedger,
   buildMarketResearchPosture,
   buildModelGateway,
+  buildOperatorNextActions,
   checkModelGatewayReadiness,
   checkModelPromptSmoke,
   buildThesis,
@@ -52,6 +53,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.routes.modelPromptSmoke).toBe("/v1/model-gateway/prompt-smoke");
     expect(wellKnown.schemaIds.modelPromptSmoke).toBe("sapphire.nexus.model_prompt_smoke.v1");
     expect(wellKnown.routes.marketResearchPosture).toBe("/v1/market/research-posture");
+    expect(wellKnown.routes.operatorNextActions).toBe("/v1/operator/next-actions");
+    expect(wellKnown.schemaIds.operatorNextActions).toBe("sapphire.nexus.operator_next_actions.v1");
     expect(wellKnown.safety.liveTradingAllowed).toBe(false);
     expect(wellKnown.safety.productionInfraMutationAllowed).toBe(false);
   });
@@ -493,6 +496,25 @@ describe("Sapphire Nexus contracts", () => {
     expect(posture.mode).toBe("research_only");
     expect(posture.liveTradingAllowed).toBe(false);
     expect(posture.blockedOutputs).toContain("buy/sell/hold advice");
+  });
+
+  test("operator next actions separate agent-safe work from Ari-only decisions", () => {
+    const nextActions = buildOperatorNextActions(new Date("2026-05-23T19:10:00.000Z"));
+
+    expect(nextActions.schemaId).toBe("sapphire.nexus.operator_next_actions.v1");
+    expect(nextActions.summary).toEqual({
+      actions: 4,
+      agentSafe: 2,
+      ariDecision: 2,
+      blocked: 2,
+      liveActionsEnabled: false,
+    });
+    expect(nextActions.actions.map((action) => action.lane)).toEqual(["agent-safe", "agent-safe", "ari-only", "ari-only"]);
+    expect(nextActions.actions.find((action) => action.id === "custom-domain-choice")?.approvalRequired).toBe(true);
+    expect(nextActions.actions.find((action) => action.id === "verify-live-surface")?.route).toBe("/v1/deployment");
+    expect(nextActions.safety.liveTradingAllowed).toBe(false);
+    expect(nextActions.safety.mutatesRuntime).toBe(false);
+    expect(nextActions.policy.ariDecisionRequiredForDomainOrPromotionPolicy).toBe(true);
   });
 
   test("server config binds to Cloud Run host and port when deployed", () => {

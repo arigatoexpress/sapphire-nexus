@@ -60,6 +60,12 @@ export function buildOpenApiSpec(origin: string) {
           "Research-only market posture",
           discovery.schemaIds.marketResearchPosture,
         ),
+        route(
+          "operatorNextActions",
+          discovery.routes.operatorNextActions,
+          "Operator next actions and Ari-only decisions",
+          discovery.schemaIds.operatorNextActions,
+        ),
       ].map((entry) => [entry.path, entry.spec]),
     ),
   };
