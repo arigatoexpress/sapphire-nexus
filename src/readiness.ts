@@ -15,17 +15,19 @@ type ProbeRunner = () => Promise<unknown> | unknown;
 const PROBE_ORDER: ProbeId[] = ["health", "evidenceLedger", "modelGateway", "modelPromptSmoke", "aoe", "agentRuntime"];
 
 export async function checkNexusReadiness(options: {
+  env?: NodeJS.ProcessEnv;
   now?: Date;
   probes?: Partial<Record<ProbeId, ProbeRunner>>;
 } = {}) {
+  const env = options.env ?? process.env;
   const now = options.now ?? new Date();
   const probes: Record<ProbeId, ProbeRunner> = {
     health: () => buildHealth(now),
     evidenceLedger: () => buildLandscapeEvidenceLedger(),
-    modelGateway: () => checkModelGatewayReadiness({ now }),
-    modelPromptSmoke: () => checkModelPromptSmoke({ now }),
-    aoe: () => checkAoeReadiness({ now }),
-    agentRuntime: () => checkAgentRuntimePublication({ now }),
+    modelGateway: () => checkModelGatewayReadiness({ env, now }),
+    modelPromptSmoke: () => checkModelPromptSmoke({ env, now }),
+    aoe: () => checkAoeReadiness({ env, now }),
+    agentRuntime: () => checkAgentRuntimePublication({ env, now }),
     ...options.probes,
   };
 
@@ -116,15 +118,19 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
     }
     case "modelGateway": {
       const degraded = numberValue(summary.degraded) ?? 0;
+      const disabled = numberValue(summary.disabled) ?? 0;
+      const gateways = numberValue(summary.gateways) ?? 0;
       const readyCount = numberValue(summary.ready) ?? 0;
-      const status = degraded === 0 ? "ready" : readyCount > 0 ? "degraded" : "unreachable";
+      const status = disabled > 0 && disabled === gateways ? "disabled" : degraded === 0 ? "ready" : readyCount > 0 ? "degraded" : "unreachable";
       return {
         status,
         ready: status === "ready",
         detail: {
-          gateways: numberValue(summary.gateways),
+          gateways,
           ready: readyCount,
           degraded,
+          disabled,
+          reason: stringValue(summary.reason),
         },
       };
     }
@@ -151,6 +157,8 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
           endpoints: numberValue(summary.endpoints),
           ready: numberValue(summary.ready),
           degraded: numberValue(summary.degraded),
+          disabled: numberValue(summary.disabled),
+          reason: stringValue(summary.reason),
         },
       };
     }
@@ -164,6 +172,7 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
           trackedSourceReady: booleanValue(summary.trackedSourceReady),
           secretViolationCount: numberValue(summary.secretViolationCount),
           ignoredGeneratedOutputCount: numberValue(summary.ignoredGeneratedOutputCount),
+          reason: stringValue(summary.reason),
         },
       };
     }

@@ -227,6 +227,23 @@ describe("Sapphire Nexus contracts", () => {
     expect(readiness.gateways[1].detail).toEqual({ status: "healthy", service: "windows_webhook" });
   });
 
+  test("public deployment mode disables local model gateway probes", async () => {
+    let called = false;
+    const readiness = await checkModelGatewayReadiness({
+      env: { VERCEL: "1" },
+      fetchImpl: (async () => {
+        called = true;
+        return Response.json({});
+      }) as typeof fetch,
+      now: new Date("2026-05-23T00:20:00.000Z"),
+    });
+
+    expect(called).toBe(false);
+    expect(readiness.summary.disabled).toBe(2);
+    expect(readiness.summary.degraded).toBe(0);
+    expect(readiness.gateways.map((gateway) => gateway.status)).toEqual(["disabled", "disabled"]);
+  });
+
   test("model prompt smoke is disabled by default and stores no prompt text", async () => {
     let called = false;
     const report = await checkModelPromptSmoke({
@@ -246,6 +263,45 @@ describe("Sapphire Nexus contracts", () => {
     expect(report.safety.storesPrompts).toBe(false);
     expect(report.policy.promptHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(JSON.stringify(report)).not.toContain("Return exactly");
+  });
+
+  test("public deployment mode disables adapter probes without shelling out or fetching", async () => {
+    let fetched = false;
+    let executed = false;
+    const env = { SAPPHIRE_NEXUS_PUBLIC_MODE: "true" };
+    const [aoe, runtime, promptSmoke] = await Promise.all([
+      checkAoeReadiness({
+        env,
+        fetchImpl: (async () => {
+          fetched = true;
+          return Response.json({});
+        }) as typeof fetch,
+      }),
+      checkAgentRuntimePublication({
+        env,
+        commandRunner: async () => {
+          executed = true;
+          return { stdout: "{}" };
+        },
+      }),
+      checkModelPromptSmoke({
+        env: {
+          ...env,
+          SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED: "true",
+          SAPPHIRE_NEXUS_PROMPT_SMOKE_MODEL: "qwen3.6:27b",
+        },
+        fetchImpl: (async () => {
+          fetched = true;
+          return Response.json({});
+        }) as typeof fetch,
+      }),
+    ]);
+
+    expect(fetched).toBe(false);
+    expect(executed).toBe(false);
+    expect(aoe.summary.status).toBe("disabled");
+    expect(runtime.summary.status).toBe("disabled");
+    expect(promptSmoke.summary.status).toBe("disabled");
   });
 
   test("model prompt smoke sends only a fixed healthcheck prompt when explicitly enabled", async () => {
@@ -328,6 +384,22 @@ describe("Sapphire Nexus contracts", () => {
     ]);
     expect(report.checks.find((check) => check.id === "modelPromptSmoke")?.status).toBe("disabled");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_SAMPLE");
+  });
+
+  test("nexus readiness treats public-mode local adapters as disabled, not degraded", async () => {
+    const report = await checkNexusReadiness({
+      env: { VERCEL: "1" },
+      now: new Date("2026-05-23T00:21:00.000Z"),
+    });
+
+    expect(report.status).toBe("ready");
+    expect(report.summary.ready).toBe(2);
+    expect(report.summary.degraded).toBe(0);
+    expect(report.summary.disabled).toBe(4);
+    expect(report.summary.productionUsable).toBe(true);
+    expect(report.checks.find((check) => check.id === "modelGateway")?.status).toBe("disabled");
+    expect(report.checks.find((check) => check.id === "aoe")?.status).toBe("disabled");
+    expect(report.checks.find((check) => check.id === "agentRuntime")?.status).toBe("disabled");
   });
 
   test("market posture is research-only and blocks execution language", () => {

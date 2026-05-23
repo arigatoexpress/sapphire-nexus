@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { AOE_ADAPTER_READINESS_SCHEMA_ID } from "./adapters/aoe.js";
 import { AGENT_RUNTIME_PUBLICATION_ADAPTER_SCHEMA_ID } from "./adapters/agent-runtime.js";
+import { isPublicDeployment, publicDeploymentReason } from "./deployment.js";
 import { EVIDENCE_LEDGER_SCHEMA_ID, buildEvidenceLedger } from "./evidence.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -186,6 +187,39 @@ export async function checkModelGatewayReadiness(options: {
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 1_500;
   const modelGateway = buildModelGateway(env);
+  if (isPublicDeployment(env)) {
+    return {
+      schemaId: MODEL_GATEWAY_READINESS_SCHEMA_ID,
+      generatedAt: (options.now ?? new Date()).toISOString(),
+      safety: {
+        readsSecrets: false,
+        sendsPrompts: false,
+        startsTraining: false,
+        mutatesRuntime: false,
+        liveTradingAllowed: false,
+      },
+      summary: {
+        gateways: modelGateway.gateways.length,
+        ready: 0,
+        degraded: 0,
+        disabled: modelGateway.gateways.length,
+        reason: publicDeploymentReason(),
+      },
+      gateways: modelGateway.gateways.map((gateway) => ({
+        id: gateway.id,
+        role: gateway.role,
+        url: gateway.baseUrl,
+        reachable: false,
+        status: "disabled",
+        statusCode: null,
+        durationMs: 0,
+        detail: {
+          reason: publicDeploymentReason(),
+        },
+      })),
+    };
+  }
+
   const gatewayReadiness = await Promise.all(
     modelGateway.gateways.map(async (gateway) => {
       const probePath = gateway.id === "ollama-local" ? "/api/tags" : "/health";
@@ -257,14 +291,15 @@ export async function checkModelPromptSmoke(options: {
   const model = env.SAPPHIRE_NEXUS_PROMPT_SMOKE_MODEL;
   const enabled = parseBoolean(env.SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED) === true;
   const url = `${ollamaUrl.replace(/\/$/, "")}/api/generate`;
-  const safety = buildPromptSmokeSafety(enabled);
+  const enabledInThisRuntime = enabled && !isPublicDeployment(env);
+  const safety = buildPromptSmokeSafety(enabledInThisRuntime);
 
   const base = {
     schemaId: MODEL_PROMPT_SMOKE_SCHEMA_ID,
     generatedAt: (options.now ?? new Date()).toISOString(),
     mode: "fixed_prompt_healthcheck",
     policy: {
-      enabled,
+      enabled: enabledInThisRuntime,
       requiresExplicitEnable: true,
       requiresExplicitModel: true,
       cloudFallbackAllowed: false,
@@ -279,6 +314,14 @@ export async function checkModelPromptSmoke(options: {
     },
     safety,
   };
+
+  if (isPublicDeployment(env)) {
+    return {
+      ...base,
+      summary: { status: "disabled", ready: false, reason: publicDeploymentReason() },
+      result: null,
+    };
+  }
 
   if (!enabled) {
     return {
