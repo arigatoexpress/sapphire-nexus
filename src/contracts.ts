@@ -20,6 +20,7 @@ export const MODEL_GATEWAY_READINESS_SCHEMA_ID = "sapphire.nexus.model_gateway_r
 export const MODEL_PROMPT_SMOKE_SCHEMA_ID = "sapphire.nexus.model_prompt_smoke.v1";
 export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture.v1";
 export const OPERATOR_NEXT_ACTIONS_SCHEMA_ID = "sapphire.nexus.operator_next_actions.v1";
+export const CLIENT_BRIEF_SCHEMA_ID = "sapphire.nexus.client_brief.v1";
 const FIXED_PROMPT_SMOKE_PROMPT = "Return exactly the token NEXUS_OK.";
 
 const LandscapeSchema = z.object({
@@ -102,6 +103,7 @@ export function buildWellKnown(origin: string) {
       modelPromptSmoke: "/v1/model-gateway/prompt-smoke",
       marketResearchPosture: "/v1/market/research-posture",
       operatorNextActions: "/v1/operator/next-actions",
+      clientBrief: "/v1/client/brief",
     },
     schemaIds: {
       health: HEALTH_SCHEMA_ID,
@@ -119,6 +121,7 @@ export function buildWellKnown(origin: string) {
       modelPromptSmoke: MODEL_PROMPT_SMOKE_SCHEMA_ID,
       marketResearchPosture: MARKET_RESEARCH_SCHEMA_ID,
       operatorNextActions: OPERATOR_NEXT_ACTIONS_SCHEMA_ID,
+      clientBrief: CLIENT_BRIEF_SCHEMA_ID,
     },
     safety: buildSafetyBoundary(),
   };
@@ -212,6 +215,60 @@ export function buildOperatorNextActions(now = new Date()) {
       reversibleCodeChangesOnly: true,
       requiresVerificationBeforeProductionClaims: true,
       ariDecisionRequiredForDomainOrPromotionPolicy: true,
+    },
+  };
+}
+
+export function buildClientBrief(origin: string, landscape = loadLandscape(), now = new Date()) {
+  return {
+    schemaId: CLIENT_BRIEF_SCHEMA_ID,
+    generatedAt: now.toISOString(),
+    product: {
+      name: "Sapphire Nexus",
+      publicUrl: origin,
+      oneLine: "A read-only intelligence workbench for source-linked research, readiness, and operator evidence.",
+      audience: ["clients", "operators", "reviewers"],
+    },
+    productionStatus: {
+      publicSurface: "live",
+      clientSafe: true,
+      liveActionsEnabled: false,
+      verifiedBy: ["/health", "/v1/readiness", "/v1/deployment", "/openapi.json"],
+    },
+    capabilities: [
+      {
+        label: "Public readiness",
+        status: "live",
+        route: "/v1/readiness",
+        clientValue: "Shows whether the public surface is usable without exposing private systems.",
+      },
+      {
+        label: "Source-rights posture",
+        status: "live",
+        route: "/v1/adapters/public-sources/readiness",
+        clientValue: "Separates reusable public metadata from reference-only sources.",
+      },
+      {
+        label: "Evidence ledger",
+        status: "live",
+        route: "/v1/evidence-ledger",
+        clientValue: "Publishes derived summaries, links, provenance, and stable hashes instead of raw payload dumps.",
+      },
+      {
+        label: "Local model gateway",
+        status: "disabled-in-public",
+        route: "/v1/model-gateway/readiness",
+        clientValue: "Keeps local inference private until explicitly enabled and verified.",
+      },
+    ],
+    protectedBoundaries: landscape.protectedLanes,
+    blockedClaims: buildBlockedClaims(),
+    safety: {
+      ...buildSafetyBoundary(),
+      rawPayloadsPublished: false,
+      clientSendsAllowed: false,
+      promisesProductionTrading: false,
+      exposesPrivateInfrastructure: false,
     },
   };
 }

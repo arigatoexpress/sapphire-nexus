@@ -3,6 +3,7 @@ import { checkAoeReadiness } from "../src/adapters/aoe.js";
 import { checkAgentRuntimePublication } from "../src/adapters/agent-runtime.js";
 import { buildPublicSourcesReadiness } from "../src/adapters/public-sources.js";
 import {
+  buildClientBrief,
   buildHealth,
   buildLandscapeEvidenceLedger,
   buildMarketResearchPosture,
@@ -39,6 +40,8 @@ describe("Sapphire Nexus contracts", () => {
     const wellKnown = buildWellKnown("http://127.0.0.1:4420");
     expect(wellKnown.routes.openApi).toBe("/openapi.json");
     expect(wellKnown.schemaIds.openApi).toBe("sapphire.nexus.openapi.v1");
+    expect(wellKnown.routes.clientBrief).toBe("/v1/client/brief");
+    expect(wellKnown.schemaIds.clientBrief).toBe("sapphire.nexus.client_brief.v1");
     expect(wellKnown.routes.deployment).toBe("/v1/deployment");
     expect(wellKnown.schemaIds.deployment).toBe("sapphire.nexus.deployment_identity.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
@@ -515,6 +518,22 @@ describe("Sapphire Nexus contracts", () => {
     expect(nextActions.safety.liveTradingAllowed).toBe(false);
     expect(nextActions.safety.mutatesRuntime).toBe(false);
     expect(nextActions.policy.ariDecisionRequiredForDomainOrPromotionPolicy).toBe(true);
+  });
+
+  test("client brief summarizes public-safe production value without live claims", () => {
+    const brief = buildClientBrief("https://nexus.example.com", loadLandscape(), new Date("2026-05-23T19:40:00.000Z"));
+
+    expect(brief.schemaId).toBe("sapphire.nexus.client_brief.v1");
+    expect(brief.product.publicUrl).toBe("https://nexus.example.com");
+    expect(brief.productionStatus.publicSurface).toBe("live");
+    expect(brief.productionStatus.liveActionsEnabled).toBe(false);
+    expect(brief.productionStatus.verifiedBy).toContain("/openapi.json");
+    expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/evidence-ledger");
+    expect(brief.protectedBoundaries).toContain("THO / Project-Go-Forward");
+    expect(brief.blockedClaims).toContain("wallet signing");
+    expect(brief.safety.rawPayloadsPublished).toBe(false);
+    expect(brief.safety.promisesProductionTrading).toBe(false);
+    expect(brief.safety.exposesPrivateInfrastructure).toBe(false);
   });
 
   test("server config binds to Cloud Run host and port when deployed", () => {
