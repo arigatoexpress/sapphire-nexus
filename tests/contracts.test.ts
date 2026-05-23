@@ -3,6 +3,7 @@ import { checkAoeReadiness } from "../src/adapters/aoe.js";
 import { checkAgentRuntimePublication } from "../src/adapters/agent-runtime.js";
 import { buildPublicSourcesReadiness } from "../src/adapters/public-sources.js";
 import { buildRepoMiningReadiness } from "../src/adapters/repo-mining.js";
+import { buildTrendingSignalsReadiness } from "../src/adapters/trending-signals.js";
 import {
   buildClientBrief,
   buildHealth,
@@ -51,6 +52,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(wellKnown.routes.repoMiningReadiness).toBe("/v1/adapters/repo-mining/readiness");
     expect(wellKnown.schemaIds.repoMiningReadiness).toBe("sapphire.nexus.adapter.repo_mining.v1");
+    expect(wellKnown.routes.trendingSignalsReadiness).toBe("/v1/adapters/trending-signals/readiness");
+    expect(wellKnown.schemaIds.trendingSignalsReadiness).toBe("sapphire.nexus.adapter.trending_signals.v1");
     expect(wellKnown.routes.readiness).toBe("/v1/readiness");
     expect(wellKnown.schemaIds.readiness).toBe("sapphire.nexus.readiness.v1");
     expect(wellKnown.routes.publicSourcesReadiness).toBe("/v1/adapters/public-sources/readiness");
@@ -148,6 +151,23 @@ describe("Sapphire Nexus contracts", () => {
       "contract_metadata_only",
     );
     expect(report.repos[0].sourceHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+  });
+
+  test("trending signals adapter exposes snapshot metadata without current trend claims", () => {
+    const report = buildTrendingSignalsReadiness(loadLandscape(), new Date("2026-05-23T23:05:00.000Z"));
+
+    expect(report.schemaId).toBe("sapphire.nexus.adapter.trending_signals.v1");
+    expect(report.summary.status).toBe("ready");
+    expect(report.summary.signals).toBeGreaterThan(0);
+    expect(report.summary.totalStarsThisWeek).toBeGreaterThan(0);
+    expect(report.summary.currentTrendClaimsAllowed).toBe(false);
+    expect(report.summary.manualRefreshRequiredForCurrentClaims).toBe(true);
+    expect(report.safety.fetchesRemoteSources).toBe(false);
+    expect(report.safety.vendorsCode).toBe(false);
+    expect(report.policy.snapshotOnly).toBe(true);
+    expect(report.policy.refreshRequiredBeforeClientTrendClaims).toBe(true);
+    expect(report.signals[0].rights.reusePosture).toBe("metadata_snapshot_only");
+    expect(report.signals[0].sourceHash).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
 
   test("AOE adapter summarizes public contracts without storing raw bundles", async () => {
@@ -462,6 +482,18 @@ describe("Sapphire Nexus contracts", () => {
           summary: { status: "ready", repos: 9, mineSignals: 22, avoidSignals: 11, protectedLanesPreserved: 6 },
           rawPayload: "PRIVATE_REPO_SAMPLE",
         }),
+        trendingSignals: () => ({
+          safety: { fetchesRemoteSources: false, vendorsCode: false },
+          summary: {
+            status: "ready",
+            signals: 3,
+            totalStarsThisWeek: 26128,
+            snapshotAt: "2026-05-22T17:10:00.000-06:00",
+            currentTrendClaimsAllowed: false,
+            manualRefreshRequiredForCurrentClaims: true,
+          },
+          rawPayload: "PRIVATE_TREND_SAMPLE",
+        }),
         publicSources: () => ({
           safety: { rawPayloadsStored: false },
           summary: { status: "ready", publicSources: 18, permissive: 15, referenceOnly: 3, needsReview: 0 },
@@ -487,12 +519,13 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(report.schemaId).toBe("sapphire.nexus.readiness.v1");
     expect(report.status).toBe("ready");
-    expect(report.summary).toEqual({ checks: 8, ready: 7, degraded: 0, disabled: 1, productionUsable: true });
+    expect(report.summary).toEqual({ checks: 9, ready: 8, degraded: 0, disabled: 1, productionUsable: true });
     expect(report.safety.liveActionsEnabled).toBe(false);
     expect(report.checks.map((check) => check.id)).toEqual([
       "health",
       "evidenceLedger",
       "repoMining",
+      "trendingSignals",
       "publicSources",
       "modelGateway",
       "modelPromptSmoke",
@@ -502,6 +535,7 @@ describe("Sapphire Nexus contracts", () => {
     expect(report.checks.find((check) => check.id === "modelPromptSmoke")?.status).toBe("disabled");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_SAMPLE");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_REPO_SAMPLE");
+    expect(JSON.stringify(report)).not.toContain("PRIVATE_TREND_SAMPLE");
     expect(JSON.stringify(report)).not.toContain("PRIVATE_SOURCE_SAMPLE");
   });
 
@@ -512,11 +546,12 @@ describe("Sapphire Nexus contracts", () => {
     });
 
     expect(report.status).toBe("ready");
-    expect(report.summary.ready).toBe(4);
+    expect(report.summary.ready).toBe(5);
     expect(report.summary.degraded).toBe(0);
     expect(report.summary.disabled).toBe(4);
     expect(report.summary.productionUsable).toBe(true);
     expect(report.checks.find((check) => check.id === "repoMining")?.status).toBe("ready");
+    expect(report.checks.find((check) => check.id === "trendingSignals")?.status).toBe("ready");
     expect(report.checks.find((check) => check.id === "publicSources")?.status).toBe("ready");
     expect(report.checks.find((check) => check.id === "modelGateway")?.status).toBe("disabled");
     expect(report.checks.find((check) => check.id === "aoe")?.status).toBe("disabled");
@@ -574,12 +609,13 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(manifest.schemaId).toBe("sapphire.nexus.verification_manifest.v1");
     expect(manifest.origin).toBe("https://nexus.example.com");
-    expect(manifest.summary.checks).toBe(13);
+    expect(manifest.summary.checks).toBe(14);
     expect(manifest.summary.requiredHeaders).toBeGreaterThanOrEqual(5);
     expect(manifest.summary.productionClaimsRequireRevisionMatch).toBe(true);
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/deployment");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/brief");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/repo-mining/readiness");
+    expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/trending-signals/readiness");
     expect(manifest.requiredHeaders["x-frame-options"]).toBe("DENY");
     expect(manifest.commands.productionSmoke).toContain("SAPPHIRE_NEXUS_EXPECTED_REVISION");
     expect(manifest.safety.liveTradingAllowed).toBe(false);

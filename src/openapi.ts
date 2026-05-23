@@ -42,6 +42,12 @@ export function buildOpenApiSpec(origin: string) {
           discovery.schemaIds.repoMiningReadiness,
         ),
         route(
+          "trendingSignalsReadiness",
+          discovery.routes.trendingSignalsReadiness,
+          "Checked-in trending signals readiness",
+          discovery.schemaIds.trendingSignalsReadiness,
+        ),
+        route(
           "publicSourcesReadiness",
           discovery.routes.publicSourcesReadiness,
           "Public-source rights readiness",

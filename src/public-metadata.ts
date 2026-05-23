@@ -17,6 +17,7 @@ Status: read-only public surface; live actions disabled.
 - GET /v1/readiness
 - GET /v1/evidence-ledger
 - GET /v1/adapters/repo-mining/readiness
+- GET /v1/adapters/trending-signals/readiness
 - GET /v1/adapters/public-sources/readiness
 - GET /v1/landscape
 - GET /v1/market/research-posture

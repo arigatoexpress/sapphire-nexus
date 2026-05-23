@@ -2,6 +2,7 @@ import { checkAgentRuntimePublication } from "./adapters/agent-runtime.js";
 import { checkAoeReadiness } from "./adapters/aoe.js";
 import { buildPublicSourcesReadiness } from "./adapters/public-sources.js";
 import { buildRepoMiningReadiness } from "./adapters/repo-mining.js";
+import { buildTrendingSignalsReadiness } from "./adapters/trending-signals.js";
 import {
   NEXUS_READINESS_SCHEMA_ID,
   buildHealth,
@@ -14,6 +15,7 @@ type ProbeId =
   | "health"
   | "evidenceLedger"
   | "repoMining"
+  | "trendingSignals"
   | "publicSources"
   | "modelGateway"
   | "modelPromptSmoke"
@@ -26,6 +28,7 @@ const PROBE_ORDER: ProbeId[] = [
   "health",
   "evidenceLedger",
   "repoMining",
+  "trendingSignals",
   "publicSources",
   "modelGateway",
   "modelPromptSmoke",
@@ -44,6 +47,7 @@ export async function checkNexusReadiness(options: {
     health: () => buildHealth(now),
     evidenceLedger: () => buildLandscapeEvidenceLedger(),
     repoMining: () => buildRepoMiningReadiness(undefined, now),
+    trendingSignals: () => buildTrendingSignalsReadiness(undefined, now),
     publicSources: () => buildPublicSourcesReadiness(undefined, now),
     modelGateway: () => checkModelGatewayReadiness({ env, now }),
     modelPromptSmoke: () => checkModelPromptSmoke({ env, now }),
@@ -174,6 +178,27 @@ function summarizeProbe(id: ProbeId, payload: unknown): {
         },
       };
     }
+    case "trendingSignals": {
+      const status = statusValue(summary.status);
+      const safety = plainRecord(record.safety);
+      const ready =
+        status === "ready" &&
+        booleanValue(safety.fetchesRemoteSources) === false &&
+        booleanValue(safety.vendorsCode) === false &&
+        booleanValue(summary.currentTrendClaimsAllowed) === false;
+      return {
+        status: ready ? "ready" : "degraded",
+        ready,
+        detail: {
+          signals: numberValue(summary.signals),
+          totalStarsThisWeek: numberValue(summary.totalStarsThisWeek),
+          snapshotAt: stringValue(summary.snapshotAt),
+          currentTrendClaimsAllowed: booleanValue(summary.currentTrendClaimsAllowed),
+          manualRefreshRequiredForCurrentClaims: booleanValue(summary.manualRefreshRequiredForCurrentClaims),
+          fetchesRemoteSources: booleanValue(safety.fetchesRemoteSources),
+        },
+      };
+    }
     case "modelGateway": {
       const degraded = numberValue(summary.degraded) ?? 0;
       const disabled = numberValue(summary.disabled) ?? 0;
@@ -243,6 +268,7 @@ function labelForProbe(id: ProbeId) {
     health: "Core health",
     evidenceLedger: "Evidence ledger",
     repoMining: "Repo-mining adapter",
+    trendingSignals: "Trending-signals adapter",
     publicSources: "Public-source rights adapter",
     modelGateway: "Model gateway readiness",
     modelPromptSmoke: "Local prompt smoke",
