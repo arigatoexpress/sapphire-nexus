@@ -29,6 +29,22 @@ describe("Sapphire Nexus API", () => {
     const discovery = await discoveryRes.json();
     expect(discovery.origin).toBe("http://127.0.0.1:4420");
     expect(discovery.routes.thesis).toBe("/v1/thesis");
+    expect(discovery.routes.llmsTxt).toBe("/llms.txt");
+    expect(discovery.routes.robotsTxt).toBe("/robots.txt");
+
+    const llmsRes = await app.request("http://127.0.0.1:4420/llms.txt");
+    expect(llmsRes.status).toBe(200);
+    expect(llmsRes.headers.get("content-type")).toContain("text/plain");
+    const llmsText = await llmsRes.text();
+    expect(llmsText).toContain("Sapphire Nexus");
+    expect(llmsText).toContain("live actions disabled");
+    expect(llmsText).toContain("THO / Project-Go-Forward is out of scope");
+    expect(llmsText).not.toContain("SECRET");
+
+    const robotsRes = await app.request("http://127.0.0.1:4420/robots.txt");
+    expect(robotsRes.status).toBe(200);
+    expect(robotsRes.headers.get("content-type")).toContain("text/plain");
+    expect(await robotsRes.text()).toContain("llms.txt: http://127.0.0.1:4420/llms.txt");
 
     const landscapeRes = await app.request("/v1/landscape");
     expect(landscapeRes.status).toBe(200);
