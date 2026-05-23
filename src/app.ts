@@ -9,6 +9,7 @@ import {
   buildModelGateway,
   buildOperatorNextActions,
   buildLandscapeEvidenceLedger,
+  buildVerificationManifest,
   checkModelGatewayReadiness,
   checkModelPromptSmoke,
   buildThesis,
@@ -62,6 +63,7 @@ export function createApp() {
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
   app.get("/v1/client/brief", (c) => c.json(buildClientBrief(publicOrigin(c.req.raw))));
   app.get("/v1/deployment", (c) => c.json(buildDeploymentIdentity(publicOrigin(c.req.raw))));
+  app.get("/v1/verification-manifest", (c) => c.json(buildVerificationManifest(publicOrigin(c.req.raw))));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
   app.get("/v1/readiness", async (c) => c.json(await checkNexusReadiness()));
   app.get("/v1/evidence-ledger", (c) => c.json(buildLandscapeEvidenceLedger()));

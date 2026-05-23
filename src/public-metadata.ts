@@ -13,6 +13,7 @@ Status: read-only public surface; live actions disabled.
 - GET /openapi.json
 - GET /v1/deployment
 - GET /v1/client/brief
+- GET /v1/verification-manifest
 - GET /v1/readiness
 - GET /v1/evidence-ledger
 - GET /v1/adapters/public-sources/readiness

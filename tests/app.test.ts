@@ -25,6 +25,8 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("Deployment Identity");
     expect(html).toContain("Client Brief");
     expect(html).toContain("/v1/client/brief");
+    expect(html).toContain("Verification");
+    expect(html).toContain("/v1/verification-manifest");
     expect(html).toContain("API Surface");
     expect(html).toContain("/openapi.json");
     expect(html).toContain("/v1/operator/next-actions");
@@ -54,6 +56,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.robotsTxt).toBe("/robots.txt");
     expect(discovery.routes.deployment).toBe("/v1/deployment");
     expect(discovery.routes.clientBrief).toBe("/v1/client/brief");
+    expect(discovery.routes.verificationManifest).toBe("/v1/verification-manifest");
     expect(discovery.routes.publicSourcesReadiness).toBe("/v1/adapters/public-sources/readiness");
     expect(discovery.routes.operatorNextActions).toBe("/v1/operator/next-actions");
 
@@ -77,6 +80,7 @@ describe("Sapphire Nexus API", () => {
     expect(openApi.openapi).toBe("3.1.0");
     expect(openApi.servers[0].url).toBe("http://127.0.0.1:4420");
     expect(openApi.paths["/v1/client/brief"].get.operationId).toBe("clientBrief");
+    expect(openApi.paths["/v1/verification-manifest"].get.operationId).toBe("verificationManifest");
     expect(openApi.paths["/v1/readiness"].get.operationId).toBe("readiness");
     expect(openApi.paths["/v1/operator/next-actions"].get.operationId).toBe("operatorNextActions");
     expect(openApi["x-sapphire-nexus"].liveActionsEnabled).toBe(false);
@@ -97,6 +101,15 @@ describe("Sapphire Nexus API", () => {
     expect(clientBrief.productionStatus.liveActionsEnabled).toBe(false);
     expect(clientBrief.safety.rawPayloadsPublished).toBe(false);
     expect(clientBrief.blockedClaims).toContain("production trading");
+
+    const verificationRes = await app.request("http://127.0.0.1:4420/v1/verification-manifest");
+    expect(verificationRes.status).toBe(200);
+    const verification = await verificationRes.json();
+    expect(verification.schemaId).toBe("sapphire.nexus.verification_manifest.v1");
+    expect(verification.origin).toBe("http://127.0.0.1:4420");
+    expect(verification.summary.productionClaimsRequireRevisionMatch).toBe(true);
+    expect(verification.requiredHeaders["x-content-type-options"]).toBe("nosniff");
+    expect(verification.safety.mutatesRuntime).toBe(false);
 
     const landscapeRes = await app.request("/v1/landscape");
     expect(landscapeRes.status).toBe(200);
