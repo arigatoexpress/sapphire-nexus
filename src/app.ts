@@ -30,7 +30,10 @@ export function createApp() {
     }
   });
 
-  app.get("/", async (c) => c.html(renderWorkbench(loadLandscape(), await checkNexusReadiness())));
+  app.get("/", async (c) => {
+    const origin = publicOrigin(c.req.raw);
+    return c.html(renderWorkbench(loadLandscape(), await checkNexusReadiness(), buildDeploymentIdentity(origin)));
+  });
   app.get("/favicon.ico", (c) =>
     c.body(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#101216"/><text x="32" y="39" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#57d6ff">SN</text></svg>',

@@ -1,10 +1,12 @@
 import type { Landscape } from "./contracts.js";
 import { buildSafetyBoundary } from "./contracts.js";
+import type { buildDeploymentIdentity } from "./deployment.js";
 import type { checkNexusReadiness } from "./readiness.js";
 
 type ReadinessReport = Awaited<ReturnType<typeof checkNexusReadiness>>;
+type DeploymentIdentity = ReturnType<typeof buildDeploymentIdentity>;
 
-export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport) {
+export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport, deployment: DeploymentIdentity) {
   const safety = buildSafetyBoundary();
   const reusable = landscape.ownedRepoSignals.filter((repo) => !repo.repo.includes("0guard") && !repo.repo.includes("wildfire"));
   const topOpenSource = landscape.openSourceShortlist.slice(0, 6);
@@ -136,6 +138,23 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
     }
     .metric { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #101216; }
     .metric strong { display: block; font-size: 22px; margin-bottom: 4px; }
+    .identity-grid { display: grid; gap: 10px; }
+    .identity-item {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 10px;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line);
+      padding: 0 0 9px;
+      font-size: 13px;
+    }
+    .identity-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .identity-label { color: var(--muted); font-size: 12px; }
+    .mono {
+      color: #dce5f2;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      overflow-wrap: anywhere;
+    }
     .check-list { display: grid; gap: 8px; margin-top: 12px; }
     .check {
       display: grid;
@@ -167,6 +186,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
     @media (max-width: 860px) {
       .grid { grid-template-columns: 1fr; padding: 14px; }
       .principles, .metric-row { grid-template-columns: 1fr; }
+      .identity-item { grid-template-columns: 1fr; gap: 4px; }
       .topbar { align-items: flex-start; flex-direction: column; }
       .thesis { font-size: 24px; }
     }
@@ -243,6 +263,17 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
         </div>
       </section>
       <section>
+        <div class="section-head"><h2>Deployment Identity</h2><span class="subtle">${escapeHtml(deployment.runtime.provider)}</span></div>
+        <div class="body">
+          <div class="identity-grid">
+            <div class="identity-item"><span class="identity-label">Origin</span><span class="mono">${escapeHtml(deployment.origin)}</span></div>
+            <div class="identity-item"><span class="identity-label">Service</span><span class="mono">${escapeHtml(displayValue(deployment.runtime.service))}</span></div>
+            <div class="identity-item"><span class="identity-label">Revision</span><span class="mono">${escapeHtml(displayValue(deployment.runtime.revision))}</span></div>
+            <div class="identity-item"><span class="identity-label">Mode</span><span class="mono">${deployment.mode.publicDeployment ? "public" : "local"} · live actions disabled</span></div>
+          </div>
+        </div>
+      </section>
+      <section>
         <div class="section-head"><h2>Open Source Shortlist</h2><span class="subtle">do not vendor blindly</span></div>
         <div class="body">
           <table>
@@ -283,6 +314,10 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
 </main>
 </body>
 </html>`;
+}
+
+function displayValue(value: string | null) {
+  return value ?? "not set";
 }
 
 function escapeHtml(value: string) {

@@ -22,6 +22,7 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("Sapphire Nexus");
     expect(html).toContain("live actions disabled");
     expect(html).toContain("Readiness");
+    expect(html).toContain("Deployment Identity");
     expect(html).toContain("summary-only");
     expect(html).toContain("Local prompt smoke");
     expect(html).toContain("Open Source Shortlist");
