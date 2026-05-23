@@ -16,10 +16,18 @@ import {
 } from "./contracts.js";
 import { buildLlmsTxt, buildRobotsTxt } from "./public-metadata.js";
 import { checkNexusReadiness } from "./readiness.js";
+import { PUBLIC_RESPONSE_HEADERS } from "./response-headers.js";
 import { renderWorkbench } from "./workbench.js";
 
 export function createApp() {
   const app = new Hono();
+
+  app.use("*", async (c, next) => {
+    await next();
+    for (const [name, value] of Object.entries(PUBLIC_RESPONSE_HEADERS)) {
+      c.header(name, value);
+    }
+  });
 
   app.get("/", async (c) => c.html(renderWorkbench(loadLandscape(), await checkNexusReadiness())));
   app.get("/favicon.ico", (c) =>

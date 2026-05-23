@@ -43,6 +43,11 @@ and agent-runtime-control-plane. The deployed workbench still renders the
 readiness rollup, but local-only checks are marked `disabled` instead of trying
 to reach private infrastructure from production.
 
+All public responses include basic hardening headers for content sniffing,
+referrer leakage, framing, cross-origin opener isolation, and browser
+permissions. Production smoke validates the core header set on every checked
+route.
+
 After deploy, run:
 
 ```bash

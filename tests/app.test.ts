@@ -4,6 +4,17 @@ import { createApp } from "../src/app.js";
 const app = createApp();
 
 describe("Sapphire Nexus API", () => {
+  test("sets public response hardening headers", async () => {
+    for (const path of ["/", "/health", "/.well-known/sapphire-nexus.json", "/llms.txt", "/robots.txt"]) {
+      const res = await app.request(`http://127.0.0.1:4420${path}`);
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(res.headers.get("referrer-policy")).toBe("no-referrer");
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+      expect(res.headers.get("cross-origin-opener-policy")).toBe("same-origin");
+      expect(res.headers.get("permissions-policy")).toContain("payment=()");
+    }
+  });
+
   test("serves the operator workbench as the first screen", async () => {
     const res = await app.request("http://127.0.0.1:4420/");
     expect(res.status).toBe(200);
