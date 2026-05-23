@@ -5,12 +5,14 @@ if (!baseUrl) {
   process.exit(2);
 }
 
+const expectedOrigin = new URL(baseUrl).origin;
+
 const checks = [
   { id: "health", path: "/health", validate: (body) => body.status === "ok" && body.liveActionsEnabled === false },
   {
     id: "discovery",
     path: "/.well-known/sapphire-nexus.json",
-    validate: (body) => body.routes?.readiness === "/v1/readiness",
+    validate: (body) => body.origin === expectedOrigin && body.routes?.readiness === "/v1/readiness",
   },
   {
     id: "readiness",
@@ -21,12 +23,13 @@ const checks = [
   {
     id: "llms",
     path: "/llms.txt",
-    validateText: (text) => text.includes("Sapphire Nexus") && text.includes("live actions disabled"),
+    validateText: (text) =>
+      text.includes("Sapphire Nexus") && text.includes(expectedOrigin) && text.includes("live actions disabled"),
   },
   {
     id: "robots",
     path: "/robots.txt",
-    validateText: (text) => text.includes("User-agent: *") && text.includes("llms.txt"),
+    validateText: (text) => text.includes("User-agent: *") && text.includes(`llms.txt: ${expectedOrigin}/llms.txt`),
   },
 ];
 
