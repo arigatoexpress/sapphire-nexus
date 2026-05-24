@@ -22,6 +22,7 @@ import { buildDataFreshness } from "../src/freshness.js";
 import { checkNexusReadiness } from "../src/readiness.js";
 import { buildDeploymentIdentity } from "../src/deployment.js";
 import { resolveServerConfig } from "../src/server-config.js";
+import { buildDataRefreshPlan } from "../src/refresh-plan.js";
 
 describe("Sapphire Nexus contracts", () => {
   test("landscape stores derived links and protected boundaries", () => {
@@ -52,6 +53,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.deployment).toBe("sapphire.nexus.deployment_identity.v1");
     expect(wellKnown.routes.dataFreshness).toBe("/v1/data/freshness");
     expect(wellKnown.schemaIds.dataFreshness).toBe("sapphire.nexus.data_freshness.v1");
+    expect(wellKnown.routes.dataRefreshPlan).toBe("/v1/data/refresh-plan");
+    expect(wellKnown.schemaIds.dataRefreshPlan).toBe("sapphire.nexus.data_refresh_plan.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
     expect(wellKnown.routes.repoMiningReadiness).toBe("/v1/adapters/repo-mining/readiness");
     expect(wellKnown.schemaIds.repoMiningReadiness).toBe("sapphire.nexus.adapter.repo_mining.v1");
@@ -189,6 +192,27 @@ describe("Sapphire Nexus contracts", () => {
     expect(report.datasets.find((dataset) => dataset.id === "trendingSignals")?.currentClaimsAllowed).toBe(false);
     expect(report.datasets.find((dataset) => dataset.id === "trendingSignals")?.manualRefreshRequiredForCurrentClaims).toBe(true);
     expect(report.datasets[0].freshnessHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+  });
+
+  test("data refresh plan describes reviewed metadata refresh without fetching or writing", () => {
+    const plan = buildDataRefreshPlan("https://nexus.example.com", loadLandscape(), new Date("2026-05-24T00:05:00.000Z"));
+
+    expect(plan.schemaId).toBe("sapphire.nexus.data_refresh_plan.v1");
+    expect(plan.origin).toBe("https://nexus.example.com");
+    expect(plan.summary.status).toBe("ready");
+    expect(plan.summary.inputs).toBe(4);
+    expect(plan.summary.remoteFetchesPerformed).toBe(false);
+    expect(plan.summary.writesPerformed).toBe(false);
+    expect(plan.summary.manualRefreshRequiredForCurrentClaims).toBeGreaterThanOrEqual(1);
+    expect(plan.target.path).toBe("data/landscape.json");
+    expect(plan.safety.fetchesRemoteSources).toBe(false);
+    expect(plan.safety.writesDataInThisRoute).toBe(false);
+    expect(plan.safety.storesRawPayloads).toBe(false);
+    expect(plan.policy.officialSourcesOnly).toBe(true);
+    expect(plan.policy.sourceRightsReviewRequired).toBe(true);
+    expect(plan.workflow.map((step) => step.lane)).toContain("ari-review");
+    expect(plan.inputs.find((input) => input.id === "trendingSignals")?.rights.freshnessTtlHours).toBe(24);
+    expect(plan.inputs[0].refreshHash).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
 
   test("AOE adapter summarizes public contracts without storing raw bundles", async () => {
@@ -631,7 +655,9 @@ describe("Sapphire Nexus contracts", () => {
     expect(brief.productionStatus.publicSurface).toBe("live");
     expect(brief.productionStatus.liveActionsEnabled).toBe(false);
     expect(brief.productionStatus.verifiedBy).toContain("/openapi.json");
+    expect(brief.productionStatus.verifiedBy).toContain("/v1/data/refresh-plan");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/evidence-ledger");
+    expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/data/refresh-plan");
     expect(brief.protectedBoundaries).toContain("THO / Project-Go-Forward");
     expect(brief.blockedClaims).toContain("wallet signing");
     expect(brief.safety.rawPayloadsPublished).toBe(false);
@@ -644,11 +670,12 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(manifest.schemaId).toBe("sapphire.nexus.verification_manifest.v1");
     expect(manifest.origin).toBe("https://nexus.example.com");
-    expect(manifest.summary.checks).toBe(15);
+    expect(manifest.summary.checks).toBe(16);
     expect(manifest.summary.requiredHeaders).toBeGreaterThanOrEqual(5);
     expect(manifest.summary.productionClaimsRequireRevisionMatch).toBe(true);
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/deployment");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/freshness");
+    expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/refresh-plan");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/brief");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/repo-mining/readiness");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/trending-signals/readiness");

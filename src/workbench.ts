@@ -20,6 +20,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
     { label: "Client Brief", path: "/v1/client/brief", detail: "public handoff" },
     { label: "Verification", path: "/v1/verification-manifest", detail: "claim checks" },
     { label: "Data Freshness", path: "/v1/data/freshness", detail: "claim freshness" },
+    { label: "Refresh Plan", path: "/v1/data/refresh-plan", detail: "metadata review" },
     { label: "Readiness", path: "/v1/readiness", detail: "operator status" },
     { label: "Deployment", path: "/v1/deployment", detail: "live revision" },
     { label: "Repo Mining", path: "/v1/adapters/repo-mining/readiness", detail: "contract reuse" },
