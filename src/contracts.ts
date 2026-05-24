@@ -26,6 +26,7 @@ export const CLIENT_DEMO_SCHEMA_ID = "sapphire.nexus.client_demo.v1";
 export const VERIFICATION_MANIFEST_SCHEMA_ID = "sapphire.nexus.verification_manifest.v1";
 export const DATA_FRESHNESS_SCHEMA_ID = "sapphire.nexus.data_freshness.v1";
 export const DATA_REFRESH_PLAN_SCHEMA_ID = "sapphire.nexus.data_refresh_plan.v1";
+export const METADATA_REFRESH_ARTIFACT_SCHEMA_ID = "sapphire.nexus.metadata_refresh_artifact.v1";
 const FIXED_PROMPT_SMOKE_PROMPT = "Return exactly the token NEXUS_OK.";
 
 const LandscapeSchema = z.object({
@@ -98,6 +99,7 @@ export function buildWellKnown(origin: string) {
       deployment: "/v1/deployment",
       dataFreshness: "/v1/data/freshness",
       dataRefreshPlan: "/v1/data/refresh-plan",
+      metadataRefreshArtifact: "/v1/data/refresh-artifact",
       clientDemo: "/v1/client/demo",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
@@ -122,6 +124,7 @@ export function buildWellKnown(origin: string) {
       deployment: DEPLOYMENT_IDENTITY_SCHEMA_ID,
       dataFreshness: DATA_FRESHNESS_SCHEMA_ID,
       dataRefreshPlan: DATA_REFRESH_PLAN_SCHEMA_ID,
+      metadataRefreshArtifact: METADATA_REFRESH_ARTIFACT_SCHEMA_ID,
       clientDemo: CLIENT_DEMO_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
@@ -179,6 +182,15 @@ export function buildOperatorNextActions(now = new Date()) {
       route: "/v1/deployment",
       approvalRequired: false,
       reason: "Revision identity and smoke checks already exist and are safe to rerun.",
+    },
+    {
+      id: "metadata-refresh-artifact",
+      lane: "agent-safe",
+      label: "Review the metadata refresh artifact before updating checked-in data",
+      status: "ready",
+      route: "/v1/data/refresh-artifact",
+      approvalRequired: false,
+      reason: "The artifact is metadata-only and separates refresh evidence from any future data write.",
     },
     {
       id: "rights-cleared-adapter",
@@ -256,6 +268,7 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         "/v1/deployment",
         "/v1/data/freshness",
         "/v1/data/refresh-plan",
+        "/v1/data/refresh-artifact",
         "/v1/client/demo",
         "/openapi.json",
         "/v1/verification-manifest",
@@ -293,6 +306,12 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         clientValue: "Shows the reviewed metadata-only path for refreshing stale public claims.",
       },
       {
+        label: "Refresh artifact",
+        status: "live",
+        route: "/v1/data/refresh-artifact",
+        clientValue: "Packages the checked-in refresh evidence for source-rights review before metadata writes.",
+      },
+      {
         label: "Demo flow",
         status: "live",
         route: "/v1/client/demo",
@@ -325,6 +344,7 @@ export function buildVerificationManifest(origin: string, now = new Date()) {
     { id: "deployment", route: "/v1/deployment", proves: "safe Cloud Run revision identity is visible" },
     { id: "dataFreshness", route: "/v1/data/freshness", proves: "checked-in data freshness is explicit before client claims" },
     { id: "dataRefreshPlan", route: "/v1/data/refresh-plan", proves: "metadata refreshes have a source-rights review path" },
+    { id: "metadataRefreshArtifact", route: "/v1/data/refresh-artifact", proves: "refresh review evidence is metadata-only and source-rights gated" },
     { id: "clientDemo", route: "/v1/client/demo", proves: "client walkthrough is public, route-linked, and claim-safe" },
     { id: "clientBrief", route: "/v1/client/brief", proves: "client-safe summary is public and non-hype" },
     { id: "verificationManifest", route: "/v1/verification-manifest", proves: "verification contract is public and self-describing" },

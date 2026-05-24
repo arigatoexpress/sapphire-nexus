@@ -78,6 +78,7 @@ local infrastructure.
 - `GET /v1/deployment`
 - `GET /v1/data/freshness`
 - `GET /v1/data/refresh-plan`
+- `GET /v1/data/refresh-artifact`
 - `GET /v1/client/demo`
 - `GET /v1/client/brief`
 - `GET /v1/verification-manifest`
@@ -135,6 +136,12 @@ sources or publishes raw payloads.
 checked-in metadata. It describes official-source inputs, target fields,
 proof requirements, source-rights review, and blocked outputs. The route itself
 does not fetch remote sources, write files, or store raw payloads.
+
+`GET /v1/data/refresh-artifact` packages the checked-in refresh evidence into a
+metadata-only review artifact before any future data write. It links the refresh
+plan, freshness state, target fields, caveats, and stable hashes, and remains
+blocked from remote fetches, writes, raw payload storage, or automatic metadata
+updates.
 
 `GET /v1/client/demo` publishes a short route-linked walkthrough for client and
 operator demos. It identifies what each public route proves, which claims remain

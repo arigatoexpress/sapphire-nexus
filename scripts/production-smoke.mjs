@@ -24,6 +24,7 @@ const checks = [
       body.routes?.deployment === "/v1/deployment" &&
       body.routes?.dataFreshness === "/v1/data/freshness" &&
       body.routes?.dataRefreshPlan === "/v1/data/refresh-plan" &&
+      body.routes?.metadataRefreshArtifact === "/v1/data/refresh-artifact" &&
       body.routes?.clientDemo === "/v1/client/demo" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.verificationManifest === "/v1/verification-manifest" &&
@@ -41,6 +42,7 @@ const checks = [
       body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
       body.paths?.["/v1/data/freshness"]?.get?.operationId === "dataFreshness" &&
       body.paths?.["/v1/data/refresh-plan"]?.get?.operationId === "dataRefreshPlan" &&
+      body.paths?.["/v1/data/refresh-artifact"]?.get?.operationId === "metadataRefreshArtifact" &&
       body.paths?.["/v1/client/demo"]?.get?.operationId === "clientDemo" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
       body.paths?.["/v1/adapters/repo-mining/readiness"]?.get?.operationId === "repoMiningReadiness" &&
@@ -83,6 +85,20 @@ const checks = [
       body.summary?.writesPerformed === false &&
       body.safety?.writesDataInThisRoute === false &&
       body.policy?.sourceRightsReviewRequired === true,
+  },
+  {
+    id: "metadataRefreshArtifact",
+    path: "/v1/data/refresh-artifact",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.metadata_refresh_artifact.v1" &&
+      body.origin === expectedOrigin &&
+      body.summary?.status === "ready_for_review" &&
+      body.summary?.metadataOnly === true &&
+      body.summary?.sourceRightsReviewRequired === true &&
+      body.summary?.remoteFetchesPerformed === false &&
+      body.summary?.writesPerformed === false &&
+      body.safety?.writesDataInThisRoute === false &&
+      body.policy?.readyForAutomaticWrite === false,
   },
   {
     id: "clientDemo",
@@ -153,7 +169,7 @@ const checks = [
     path: "/v1/operator/next-actions",
     validate: (body) =>
       body.schemaId === "sapphire.nexus.operator_next_actions.v1" &&
-      body.summary?.agentSafe === 2 &&
+      body.summary?.agentSafe === 3 &&
       body.summary?.ariDecision === 2 &&
       body.safety?.mutatesRuntime === false,
   },
@@ -172,6 +188,8 @@ const checks = [
       text.includes("/v1/data/freshness") &&
       text.includes("Refresh Plan") &&
       text.includes("/v1/data/refresh-plan") &&
+      text.includes("Refresh Artifact") &&
+      text.includes("/v1/data/refresh-artifact") &&
       text.includes("Verification") &&
       text.includes("/v1/verification-manifest") &&
       text.includes("API Surface") &&
