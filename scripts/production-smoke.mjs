@@ -24,6 +24,7 @@ const checks = [
       body.routes?.deployment === "/v1/deployment" &&
       body.routes?.dataFreshness === "/v1/data/freshness" &&
       body.routes?.dataRefreshPlan === "/v1/data/refresh-plan" &&
+      body.routes?.clientDemo === "/v1/client/demo" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.verificationManifest === "/v1/verification-manifest" &&
       body.routes?.repoMiningReadiness === "/v1/adapters/repo-mining/readiness" &&
@@ -40,6 +41,7 @@ const checks = [
       body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
       body.paths?.["/v1/data/freshness"]?.get?.operationId === "dataFreshness" &&
       body.paths?.["/v1/data/refresh-plan"]?.get?.operationId === "dataRefreshPlan" &&
+      body.paths?.["/v1/client/demo"]?.get?.operationId === "clientDemo" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
       body.paths?.["/v1/adapters/repo-mining/readiness"]?.get?.operationId === "repoMiningReadiness" &&
       body.paths?.["/v1/adapters/trending-signals/readiness"]?.get?.operationId === "trendingSignalsReadiness" &&
@@ -81,6 +83,18 @@ const checks = [
       body.summary?.writesPerformed === false &&
       body.safety?.writesDataInThisRoute === false &&
       body.policy?.sourceRightsReviewRequired === true,
+  },
+  {
+    id: "clientDemo",
+    path: "/v1/client/demo",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.client_demo.v1" &&
+      body.origin === expectedOrigin &&
+      body.summary?.status === "ready" &&
+      body.summary?.publicRoutesOnly === true &&
+      body.summary?.liveActionsEnabled === false &&
+      body.safety?.mutatesRuntime === false &&
+      body.policy?.revisionVerificationRequiredBeforeProductionClaims === true,
   },
   {
     id: "clientBrief",
@@ -152,6 +166,8 @@ const checks = [
       text.includes("Deployment Identity") &&
       text.includes("Client Brief") &&
       text.includes("/v1/client/brief") &&
+      text.includes("Client Demo") &&
+      text.includes("/v1/client/demo") &&
       text.includes("Data Freshness") &&
       text.includes("/v1/data/freshness") &&
       text.includes("Refresh Plan") &&

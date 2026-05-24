@@ -78,6 +78,7 @@ local infrastructure.
 - `GET /v1/deployment`
 - `GET /v1/data/freshness`
 - `GET /v1/data/refresh-plan`
+- `GET /v1/client/demo`
 - `GET /v1/client/brief`
 - `GET /v1/verification-manifest`
 - `GET /v1/thesis`
@@ -134,6 +135,11 @@ sources or publishes raw payloads.
 checked-in metadata. It describes official-source inputs, target fields,
 proof requirements, source-rights review, and blocked outputs. The route itself
 does not fetch remote sources, write files, or store raw payloads.
+
+`GET /v1/client/demo` publishes a short route-linked walkthrough for client and
+operator demos. It identifies what each public route proves, which claims remain
+blocked, and when revision/freshness verification is required. It does not send
+messages, mutate runtimes, expose private infrastructure, or imply live trading.
 
 `GET /openapi.json` exposes a small OpenAPI 3.1 contract for the read-only
 public API. It lists the public JSON routes, schema ids, and the disabled

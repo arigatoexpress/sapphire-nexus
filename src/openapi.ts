@@ -25,6 +25,7 @@ export function buildOpenApiSpec(origin: string) {
         route("deployment", discovery.routes.deployment, "Safe deployment identity", discovery.schemaIds.deployment),
         route("dataFreshness", discovery.routes.dataFreshness, "Checked-in data freshness", discovery.schemaIds.dataFreshness),
         route("dataRefreshPlan", discovery.routes.dataRefreshPlan, "Metadata refresh plan", discovery.schemaIds.dataRefreshPlan),
+        route("clientDemo", discovery.routes.clientDemo, "Client-safe demo flow", discovery.schemaIds.clientDemo),
         route("clientBrief", discovery.routes.clientBrief, "Client-safe production brief", discovery.schemaIds.clientBrief),
         route(
           "verificationManifest",
