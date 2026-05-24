@@ -27,6 +27,8 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("/v1/client/brief");
     expect(html).toContain("Data Freshness");
     expect(html).toContain("/v1/data/freshness");
+    expect(html).toContain("Refresh Plan");
+    expect(html).toContain("/v1/data/refresh-plan");
     expect(html).toContain("Verification");
     expect(html).toContain("/v1/verification-manifest");
     expect(html).toContain("API Surface");
@@ -60,6 +62,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.robotsTxt).toBe("/robots.txt");
     expect(discovery.routes.deployment).toBe("/v1/deployment");
     expect(discovery.routes.dataFreshness).toBe("/v1/data/freshness");
+    expect(discovery.routes.dataRefreshPlan).toBe("/v1/data/refresh-plan");
     expect(discovery.routes.clientBrief).toBe("/v1/client/brief");
     expect(discovery.routes.verificationManifest).toBe("/v1/verification-manifest");
     expect(discovery.routes.repoMiningReadiness).toBe("/v1/adapters/repo-mining/readiness");
@@ -88,6 +91,7 @@ describe("Sapphire Nexus API", () => {
     expect(openApi.servers[0].url).toBe("http://127.0.0.1:4420");
     expect(openApi.paths["/v1/client/brief"].get.operationId).toBe("clientBrief");
     expect(openApi.paths["/v1/data/freshness"].get.operationId).toBe("dataFreshness");
+    expect(openApi.paths["/v1/data/refresh-plan"].get.operationId).toBe("dataRefreshPlan");
     expect(openApi.paths["/v1/verification-manifest"].get.operationId).toBe("verificationManifest");
     expect(openApi.paths["/v1/adapters/repo-mining/readiness"].get.operationId).toBe("repoMiningReadiness");
     expect(openApi.paths["/v1/adapters/trending-signals/readiness"].get.operationId).toBe("trendingSignalsReadiness");
@@ -113,6 +117,17 @@ describe("Sapphire Nexus API", () => {
     expect(freshness.summary.manualRefreshRequiredForCurrentClaims).toBeGreaterThanOrEqual(1);
     expect(freshness.safety.fetchesRemoteSources).toBe(false);
     expect(freshness.policy.currentTrendClaimsRequireManualRefresh).toBe(true);
+
+    const refreshPlanRes = await app.request("http://127.0.0.1:4420/v1/data/refresh-plan");
+    expect(refreshPlanRes.status).toBe(200);
+    const refreshPlan = await refreshPlanRes.json();
+    expect(refreshPlan.schemaId).toBe("sapphire.nexus.data_refresh_plan.v1");
+    expect(refreshPlan.origin).toBe("http://127.0.0.1:4420");
+    expect(refreshPlan.summary.status).toBe("ready");
+    expect(refreshPlan.summary.remoteFetchesPerformed).toBe(false);
+    expect(refreshPlan.summary.writesPerformed).toBe(false);
+    expect(refreshPlan.safety.writesDataInThisRoute).toBe(false);
+    expect(refreshPlan.policy.sourceRightsReviewRequired).toBe(true);
 
     const clientBriefRes = await app.request("http://127.0.0.1:4420/v1/client/brief");
     expect(clientBriefRes.status).toBe(200);

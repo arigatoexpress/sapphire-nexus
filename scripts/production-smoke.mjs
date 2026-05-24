@@ -23,6 +23,7 @@ const checks = [
       body.routes?.readiness === "/v1/readiness" &&
       body.routes?.deployment === "/v1/deployment" &&
       body.routes?.dataFreshness === "/v1/data/freshness" &&
+      body.routes?.dataRefreshPlan === "/v1/data/refresh-plan" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.verificationManifest === "/v1/verification-manifest" &&
       body.routes?.repoMiningReadiness === "/v1/adapters/repo-mining/readiness" &&
@@ -38,6 +39,7 @@ const checks = [
       body.servers?.[0]?.url === expectedOrigin &&
       body.paths?.["/v1/client/brief"]?.get?.operationId === "clientBrief" &&
       body.paths?.["/v1/data/freshness"]?.get?.operationId === "dataFreshness" &&
+      body.paths?.["/v1/data/refresh-plan"]?.get?.operationId === "dataRefreshPlan" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
       body.paths?.["/v1/adapters/repo-mining/readiness"]?.get?.operationId === "repoMiningReadiness" &&
       body.paths?.["/v1/adapters/trending-signals/readiness"]?.get?.operationId === "trendingSignalsReadiness" &&
@@ -67,6 +69,18 @@ const checks = [
       body.summary?.manualRefreshRequiredForCurrentClaims >= 1 &&
       body.safety?.fetchesRemoteSources === false &&
       body.policy?.currentTrendClaimsRequireManualRefresh === true,
+  },
+  {
+    id: "dataRefreshPlan",
+    path: "/v1/data/refresh-plan",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.data_refresh_plan.v1" &&
+      body.origin === expectedOrigin &&
+      body.summary?.status === "ready" &&
+      body.summary?.remoteFetchesPerformed === false &&
+      body.summary?.writesPerformed === false &&
+      body.safety?.writesDataInThisRoute === false &&
+      body.policy?.sourceRightsReviewRequired === true,
   },
   {
     id: "clientBrief",
@@ -140,6 +154,8 @@ const checks = [
       text.includes("/v1/client/brief") &&
       text.includes("Data Freshness") &&
       text.includes("/v1/data/freshness") &&
+      text.includes("Refresh Plan") &&
+      text.includes("/v1/data/refresh-plan") &&
       text.includes("Verification") &&
       text.includes("/v1/verification-manifest") &&
       text.includes("API Surface") &&

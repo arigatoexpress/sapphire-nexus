@@ -23,6 +23,7 @@ import { buildDeploymentIdentity } from "./deployment.js";
 import { buildDataFreshness } from "./freshness.js";
 import { buildOpenApiSpec } from "./openapi.js";
 import { buildLlmsTxt, buildRobotsTxt } from "./public-metadata.js";
+import { buildDataRefreshPlan } from "./refresh-plan.js";
 import { checkNexusReadiness } from "./readiness.js";
 import { PUBLIC_RESPONSE_HEADERS } from "./response-headers.js";
 import { renderWorkbench } from "./workbench.js";
@@ -67,6 +68,7 @@ export function createApp() {
   app.get("/v1/client/brief", (c) => c.json(buildClientBrief(publicOrigin(c.req.raw))));
   app.get("/v1/deployment", (c) => c.json(buildDeploymentIdentity(publicOrigin(c.req.raw))));
   app.get("/v1/data/freshness", (c) => c.json(buildDataFreshness(publicOrigin(c.req.raw))));
+  app.get("/v1/data/refresh-plan", (c) => c.json(buildDataRefreshPlan(publicOrigin(c.req.raw))));
   app.get("/v1/verification-manifest", (c) => c.json(buildVerificationManifest(publicOrigin(c.req.raw))));
   app.get("/v1/landscape", (c) => c.json(loadLandscape()));
   app.get("/v1/readiness", async (c) => c.json(await checkNexusReadiness()));
