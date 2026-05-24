@@ -18,6 +18,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
     { label: "OpenAPI", path: "/openapi.json", detail: "client contract" },
     { label: "Discovery", path: "/.well-known/sapphire-nexus.json", detail: "route map" },
     { label: "Client Brief", path: "/v1/client/brief", detail: "public handoff" },
+    { label: "Client Demo", path: "/v1/client/demo", detail: "safe walkthrough" },
     { label: "Verification", path: "/v1/verification-manifest", detail: "claim checks" },
     { label: "Data Freshness", path: "/v1/data/freshness", detail: "claim freshness" },
     { label: "Refresh Plan", path: "/v1/data/refresh-plan", detail: "metadata review" },

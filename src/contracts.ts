@@ -22,6 +22,7 @@ export const MODEL_PROMPT_SMOKE_SCHEMA_ID = "sapphire.nexus.model_prompt_smoke.v
 export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture.v1";
 export const OPERATOR_NEXT_ACTIONS_SCHEMA_ID = "sapphire.nexus.operator_next_actions.v1";
 export const CLIENT_BRIEF_SCHEMA_ID = "sapphire.nexus.client_brief.v1";
+export const CLIENT_DEMO_SCHEMA_ID = "sapphire.nexus.client_demo.v1";
 export const VERIFICATION_MANIFEST_SCHEMA_ID = "sapphire.nexus.verification_manifest.v1";
 export const DATA_FRESHNESS_SCHEMA_ID = "sapphire.nexus.data_freshness.v1";
 export const DATA_REFRESH_PLAN_SCHEMA_ID = "sapphire.nexus.data_refresh_plan.v1";
@@ -97,6 +98,7 @@ export function buildWellKnown(origin: string) {
       deployment: "/v1/deployment",
       dataFreshness: "/v1/data/freshness",
       dataRefreshPlan: "/v1/data/refresh-plan",
+      clientDemo: "/v1/client/demo",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
       readiness: "/v1/readiness",
@@ -120,6 +122,7 @@ export function buildWellKnown(origin: string) {
       deployment: DEPLOYMENT_IDENTITY_SCHEMA_ID,
       dataFreshness: DATA_FRESHNESS_SCHEMA_ID,
       dataRefreshPlan: DATA_REFRESH_PLAN_SCHEMA_ID,
+      clientDemo: CLIENT_DEMO_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
       readiness: NEXUS_READINESS_SCHEMA_ID,
@@ -253,6 +256,7 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         "/v1/deployment",
         "/v1/data/freshness",
         "/v1/data/refresh-plan",
+        "/v1/client/demo",
         "/openapi.json",
         "/v1/verification-manifest",
       ],
@@ -289,6 +293,12 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         clientValue: "Shows the reviewed metadata-only path for refreshing stale public claims.",
       },
       {
+        label: "Demo flow",
+        status: "live",
+        route: "/v1/client/demo",
+        clientValue: "Provides a route-linked, claim-safe walkthrough for clients and operators.",
+      },
+      {
         label: "Local model gateway",
         status: "disabled-in-public",
         route: "/v1/model-gateway/readiness",
@@ -315,6 +325,7 @@ export function buildVerificationManifest(origin: string, now = new Date()) {
     { id: "deployment", route: "/v1/deployment", proves: "safe Cloud Run revision identity is visible" },
     { id: "dataFreshness", route: "/v1/data/freshness", proves: "checked-in data freshness is explicit before client claims" },
     { id: "dataRefreshPlan", route: "/v1/data/refresh-plan", proves: "metadata refreshes have a source-rights review path" },
+    { id: "clientDemo", route: "/v1/client/demo", proves: "client walkthrough is public, route-linked, and claim-safe" },
     { id: "clientBrief", route: "/v1/client/brief", proves: "client-safe summary is public and non-hype" },
     { id: "verificationManifest", route: "/v1/verification-manifest", proves: "verification contract is public and self-describing" },
     { id: "readiness", route: "/v1/readiness", proves: "public readiness rollup is usable" },

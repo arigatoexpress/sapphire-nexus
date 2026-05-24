@@ -4,6 +4,7 @@ import { checkAgentRuntimePublication } from "./adapters/agent-runtime.js";
 import { buildPublicSourcesReadiness } from "./adapters/public-sources.js";
 import { buildRepoMiningReadiness } from "./adapters/repo-mining.js";
 import { buildTrendingSignalsReadiness } from "./adapters/trending-signals.js";
+import { buildClientDemo } from "./client-demo.js";
 import {
   buildHealth,
   buildClientBrief,
@@ -66,6 +67,7 @@ export function createApp() {
   );
   app.get("/v1/thesis", (c) => c.json(buildThesis()));
   app.get("/v1/client/brief", (c) => c.json(buildClientBrief(publicOrigin(c.req.raw))));
+  app.get("/v1/client/demo", (c) => c.json(buildClientDemo(publicOrigin(c.req.raw))));
   app.get("/v1/deployment", (c) => c.json(buildDeploymentIdentity(publicOrigin(c.req.raw))));
   app.get("/v1/data/freshness", (c) => c.json(buildDataFreshness(publicOrigin(c.req.raw))));
   app.get("/v1/data/refresh-plan", (c) => c.json(buildDataRefreshPlan(publicOrigin(c.req.raw))));

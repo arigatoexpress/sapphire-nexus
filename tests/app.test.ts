@@ -25,6 +25,8 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("Deployment Identity");
     expect(html).toContain("Client Brief");
     expect(html).toContain("/v1/client/brief");
+    expect(html).toContain("Client Demo");
+    expect(html).toContain("/v1/client/demo");
     expect(html).toContain("Data Freshness");
     expect(html).toContain("/v1/data/freshness");
     expect(html).toContain("Refresh Plan");
@@ -63,6 +65,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.deployment).toBe("/v1/deployment");
     expect(discovery.routes.dataFreshness).toBe("/v1/data/freshness");
     expect(discovery.routes.dataRefreshPlan).toBe("/v1/data/refresh-plan");
+    expect(discovery.routes.clientDemo).toBe("/v1/client/demo");
     expect(discovery.routes.clientBrief).toBe("/v1/client/brief");
     expect(discovery.routes.verificationManifest).toBe("/v1/verification-manifest");
     expect(discovery.routes.repoMiningReadiness).toBe("/v1/adapters/repo-mining/readiness");
@@ -90,6 +93,7 @@ describe("Sapphire Nexus API", () => {
     expect(openApi.openapi).toBe("3.1.0");
     expect(openApi.servers[0].url).toBe("http://127.0.0.1:4420");
     expect(openApi.paths["/v1/client/brief"].get.operationId).toBe("clientBrief");
+    expect(openApi.paths["/v1/client/demo"].get.operationId).toBe("clientDemo");
     expect(openApi.paths["/v1/data/freshness"].get.operationId).toBe("dataFreshness");
     expect(openApi.paths["/v1/data/refresh-plan"].get.operationId).toBe("dataRefreshPlan");
     expect(openApi.paths["/v1/verification-manifest"].get.operationId).toBe("verificationManifest");
@@ -128,6 +132,18 @@ describe("Sapphire Nexus API", () => {
     expect(refreshPlan.summary.writesPerformed).toBe(false);
     expect(refreshPlan.safety.writesDataInThisRoute).toBe(false);
     expect(refreshPlan.policy.sourceRightsReviewRequired).toBe(true);
+
+    const clientDemoRes = await app.request("http://127.0.0.1:4420/v1/client/demo");
+    expect(clientDemoRes.status).toBe(200);
+    const clientDemo = await clientDemoRes.json();
+    expect(clientDemo.schemaId).toBe("sapphire.nexus.client_demo.v1");
+    expect(clientDemo.origin).toBe("http://127.0.0.1:4420");
+    expect(clientDemo.summary.status).toBe("ready");
+    expect(clientDemo.summary.publicRoutesOnly).toBe(true);
+    expect(clientDemo.summary.liveActionsEnabled).toBe(false);
+    expect(clientDemo.steps.map((step: { route: string }) => step.route)).toContain("/v1/data/freshness");
+    expect(clientDemo.safety.mutatesRuntime).toBe(false);
+    expect(clientDemo.policy.revisionVerificationRequiredBeforeProductionClaims).toBe(true);
 
     const clientBriefRes = await app.request("http://127.0.0.1:4420/v1/client/brief");
     expect(clientBriefRes.status).toBe(200);
