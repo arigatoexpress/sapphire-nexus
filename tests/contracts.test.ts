@@ -22,6 +22,7 @@ import { buildDataFreshness } from "../src/freshness.js";
 import { checkNexusReadiness } from "../src/readiness.js";
 import { buildDeploymentIdentity } from "../src/deployment.js";
 import { resolveServerConfig } from "../src/server-config.js";
+import { buildMetadataRefreshArtifact } from "../src/refresh-artifact.js";
 import { buildDataRefreshPlan } from "../src/refresh-plan.js";
 import { buildClientDemo } from "../src/client-demo.js";
 
@@ -56,6 +57,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.dataFreshness).toBe("sapphire.nexus.data_freshness.v1");
     expect(wellKnown.routes.dataRefreshPlan).toBe("/v1/data/refresh-plan");
     expect(wellKnown.schemaIds.dataRefreshPlan).toBe("sapphire.nexus.data_refresh_plan.v1");
+    expect(wellKnown.routes.metadataRefreshArtifact).toBe("/v1/data/refresh-artifact");
+    expect(wellKnown.schemaIds.metadataRefreshArtifact).toBe("sapphire.nexus.metadata_refresh_artifact.v1");
     expect(wellKnown.routes.clientDemo).toBe("/v1/client/demo");
     expect(wellKnown.schemaIds.clientDemo).toBe("sapphire.nexus.client_demo.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
@@ -216,6 +219,41 @@ describe("Sapphire Nexus contracts", () => {
     expect(plan.workflow.map((step) => step.lane)).toContain("ari-review");
     expect(plan.inputs.find((input) => input.id === "trendingSignals")?.rights.freshnessTtlHours).toBe(24);
     expect(plan.inputs[0].refreshHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+  });
+
+  test("metadata refresh artifact packages review evidence without writes", () => {
+    const artifact = buildMetadataRefreshArtifact(
+      "https://nexus.example.com",
+      loadLandscape(),
+      new Date("2026-05-24T01:05:00.000Z"),
+    );
+
+    expect(artifact.schemaId).toBe("sapphire.nexus.metadata_refresh_artifact.v1");
+    expect(artifact.origin).toBe("https://nexus.example.com");
+    expect(artifact.summary).toEqual({
+      status: "ready_for_review",
+      inputs: 4,
+      reviewItems: 4,
+      metadataOnly: true,
+      sourceRightsReviewRequired: true,
+      manualRefreshRequiredForCurrentClaims: expect.any(Number),
+      remoteFetchesPerformed: false,
+      writesPerformed: false,
+      rawPayloadsIncluded: false,
+    });
+    expect(artifact.artifact.targetPath).toBe("data/landscape.json");
+    expect(artifact.artifact.sourcePlanRoute).toBe("/v1/data/refresh-plan");
+    expect(artifact.artifact.freshnessRoute).toBe("/v1/data/freshness");
+    expect(artifact.artifact.artifactHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(artifact.reviewItems.map((item) => item.id)).toContain("trendingSignals");
+    expect(artifact.reviewItems.every((item) => item.review.writesInThisRoute === false)).toBe(true);
+    expect(artifact.reviewItems.every((item) => item.review.rawPayloadsIncluded === false)).toBe(true);
+    expect(artifact.reviewItems[0].artifactHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(artifact.safety.fetchesRemoteSources).toBe(false);
+    expect(artifact.safety.writesDataInThisRoute).toBe(false);
+    expect(artifact.safety.storesRawPayloads).toBe(false);
+    expect(artifact.policy.readyForAutomaticWrite).toBe(false);
+    expect(artifact.policy.sourceRightsReviewRequired).toBe(true);
   });
 
   test("client demo flow is route-linked and blocks live claims", () => {
@@ -666,15 +704,16 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(nextActions.schemaId).toBe("sapphire.nexus.operator_next_actions.v1");
     expect(nextActions.summary).toEqual({
-      actions: 4,
-      agentSafe: 2,
+      actions: 5,
+      agentSafe: 3,
       ariDecision: 2,
       blocked: 2,
       liveActionsEnabled: false,
     });
-    expect(nextActions.actions.map((action) => action.lane)).toEqual(["agent-safe", "agent-safe", "ari-only", "ari-only"]);
+    expect(nextActions.actions.map((action) => action.lane)).toEqual(["agent-safe", "agent-safe", "agent-safe", "ari-only", "ari-only"]);
     expect(nextActions.actions.find((action) => action.id === "custom-domain-choice")?.approvalRequired).toBe(true);
     expect(nextActions.actions.find((action) => action.id === "verify-live-surface")?.route).toBe("/v1/deployment");
+    expect(nextActions.actions.find((action) => action.id === "metadata-refresh-artifact")?.route).toBe("/v1/data/refresh-artifact");
     expect(nextActions.safety.liveTradingAllowed).toBe(false);
     expect(nextActions.safety.mutatesRuntime).toBe(false);
     expect(nextActions.policy.ariDecisionRequiredForDomainOrPromotionPolicy).toBe(true);
@@ -689,9 +728,11 @@ describe("Sapphire Nexus contracts", () => {
     expect(brief.productionStatus.liveActionsEnabled).toBe(false);
     expect(brief.productionStatus.verifiedBy).toContain("/openapi.json");
     expect(brief.productionStatus.verifiedBy).toContain("/v1/data/refresh-plan");
+    expect(brief.productionStatus.verifiedBy).toContain("/v1/data/refresh-artifact");
     expect(brief.productionStatus.verifiedBy).toContain("/v1/client/demo");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/evidence-ledger");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/data/refresh-plan");
+    expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/data/refresh-artifact");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/client/demo");
     expect(brief.protectedBoundaries).toContain("THO / Project-Go-Forward");
     expect(brief.blockedClaims).toContain("wallet signing");
@@ -705,12 +746,13 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(manifest.schemaId).toBe("sapphire.nexus.verification_manifest.v1");
     expect(manifest.origin).toBe("https://nexus.example.com");
-    expect(manifest.summary.checks).toBe(17);
+    expect(manifest.summary.checks).toBe(18);
     expect(manifest.summary.requiredHeaders).toBeGreaterThanOrEqual(5);
     expect(manifest.summary.productionClaimsRequireRevisionMatch).toBe(true);
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/deployment");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/freshness");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/refresh-plan");
+    expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/refresh-artifact");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/demo");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/brief");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/repo-mining/readiness");
