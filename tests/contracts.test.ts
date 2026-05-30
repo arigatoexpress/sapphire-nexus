@@ -22,6 +22,7 @@ import { buildDataFreshness } from "../src/freshness.js";
 import { checkNexusReadiness } from "../src/readiness.js";
 import { buildDeploymentIdentity } from "../src/deployment.js";
 import { resolveServerConfig } from "../src/server-config.js";
+import { buildClientClaimReadiness } from "../src/client-claim-readiness.js";
 import { buildMetadataRefreshArtifact } from "../src/refresh-artifact.js";
 import { buildDataRefreshPlan } from "../src/refresh-plan.js";
 import { buildClientDemo } from "../src/client-demo.js";
@@ -59,6 +60,8 @@ describe("Sapphire Nexus contracts", () => {
     expect(wellKnown.schemaIds.dataRefreshPlan).toBe("sapphire.nexus.data_refresh_plan.v1");
     expect(wellKnown.routes.metadataRefreshArtifact).toBe("/v1/data/refresh-artifact");
     expect(wellKnown.schemaIds.metadataRefreshArtifact).toBe("sapphire.nexus.metadata_refresh_artifact.v1");
+    expect(wellKnown.routes.clientClaimReadiness).toBe("/v1/client/claim-readiness");
+    expect(wellKnown.schemaIds.clientClaimReadiness).toBe("sapphire.nexus.client_claim_readiness.v1");
     expect(wellKnown.routes.clientDemo).toBe("/v1/client/demo");
     expect(wellKnown.schemaIds.clientDemo).toBe("sapphire.nexus.client_demo.v1");
     expect(wellKnown.schemaIds.evidenceLedger).toBe("sapphire.nexus.evidence_ledger.v1");
@@ -254,6 +257,37 @@ describe("Sapphire Nexus contracts", () => {
     expect(artifact.safety.storesRawPayloads).toBe(false);
     expect(artifact.policy.readyForAutomaticWrite).toBe(false);
     expect(artifact.policy.sourceRightsReviewRequired).toBe(true);
+  });
+
+  test("client claim readiness blocks current claims when freshness needs review", () => {
+    const readiness = buildClientClaimReadiness(
+      "https://nexus.example.com",
+      loadLandscape(),
+      new Date("2026-05-30T20:15:00.000Z"),
+    );
+
+    expect(readiness.schemaId).toBe("sapphire.nexus.client_claim_readiness.v1");
+    expect(readiness.origin).toBe("https://nexus.example.com");
+    expect(readiness.summary.status).toBe("review_required");
+    expect(readiness.summary.datasets).toBe(5);
+    expect(readiness.summary.readyDatasets).toBe(0);
+    expect(readiness.summary.reviewDatasets).toBe(5);
+    expect(readiness.summary.clientCurrentClaimsAllowed).toBe(false);
+    expect(readiness.summary.liveActionsEnabled).toBe(false);
+    expect(readiness.gates.map((gate) => gate.route)).toEqual([
+      "/v1/deployment",
+      "/v1/data/freshness",
+      "/v1/data/refresh-artifact",
+      "/v1/verification-manifest",
+    ]);
+    expect(readiness.gates.find((gate) => gate.id === "review-freshness")?.state).toBe("review_required");
+    expect(readiness.datasets.find((dataset) => dataset.id === "trendingSignals")?.currentClaimReady).toBe(false);
+    expect(readiness.datasets.every((dataset) => dataset.manualRefreshRequiredForCurrentClaims)).toBe(true);
+    expect(readiness.safety.fetchesRemoteSources).toBe(false);
+    expect(readiness.safety.writesDataInThisRoute).toBe(false);
+    expect(readiness.safety.storesRawPayloads).toBe(false);
+    expect(readiness.policy.revisionVerificationRequiredBeforeProductionClaims).toBe(true);
+    expect(readiness.policy.blockedClaims).toContain("customer messaging");
   });
 
   test("client demo flow is route-linked and blocks live claims", () => {
@@ -704,15 +738,23 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(nextActions.schemaId).toBe("sapphire.nexus.operator_next_actions.v1");
     expect(nextActions.summary).toEqual({
-      actions: 5,
-      agentSafe: 3,
+      actions: 6,
+      agentSafe: 4,
       ariDecision: 2,
       blocked: 2,
       liveActionsEnabled: false,
     });
-    expect(nextActions.actions.map((action) => action.lane)).toEqual(["agent-safe", "agent-safe", "agent-safe", "ari-only", "ari-only"]);
+    expect(nextActions.actions.map((action) => action.lane)).toEqual([
+      "agent-safe",
+      "agent-safe",
+      "agent-safe",
+      "agent-safe",
+      "ari-only",
+      "ari-only",
+    ]);
     expect(nextActions.actions.find((action) => action.id === "custom-domain-choice")?.approvalRequired).toBe(true);
     expect(nextActions.actions.find((action) => action.id === "verify-live-surface")?.route).toBe("/v1/deployment");
+    expect(nextActions.actions.find((action) => action.id === "client-claim-readiness")?.route).toBe("/v1/client/claim-readiness");
     expect(nextActions.actions.find((action) => action.id === "metadata-refresh-artifact")?.route).toBe("/v1/data/refresh-artifact");
     expect(nextActions.safety.liveTradingAllowed).toBe(false);
     expect(nextActions.safety.mutatesRuntime).toBe(false);
@@ -729,10 +771,12 @@ describe("Sapphire Nexus contracts", () => {
     expect(brief.productionStatus.verifiedBy).toContain("/openapi.json");
     expect(brief.productionStatus.verifiedBy).toContain("/v1/data/refresh-plan");
     expect(brief.productionStatus.verifiedBy).toContain("/v1/data/refresh-artifact");
+    expect(brief.productionStatus.verifiedBy).toContain("/v1/client/claim-readiness");
     expect(brief.productionStatus.verifiedBy).toContain("/v1/client/demo");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/evidence-ledger");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/data/refresh-plan");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/data/refresh-artifact");
+    expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/client/claim-readiness");
     expect(brief.capabilities.map((capability) => capability.route)).toContain("/v1/client/demo");
     expect(brief.protectedBoundaries).toContain("THO / Project-Go-Forward");
     expect(brief.blockedClaims).toContain("wallet signing");
@@ -746,13 +790,14 @@ describe("Sapphire Nexus contracts", () => {
 
     expect(manifest.schemaId).toBe("sapphire.nexus.verification_manifest.v1");
     expect(manifest.origin).toBe("https://nexus.example.com");
-    expect(manifest.summary.checks).toBe(18);
+    expect(manifest.summary.checks).toBe(19);
     expect(manifest.summary.requiredHeaders).toBeGreaterThanOrEqual(5);
     expect(manifest.summary.productionClaimsRequireRevisionMatch).toBe(true);
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/deployment");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/freshness");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/refresh-plan");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/data/refresh-artifact");
+    expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/claim-readiness");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/demo");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/client/brief");
     expect(manifest.checks.map((check) => check.route)).toContain("/v1/adapters/repo-mining/readiness");

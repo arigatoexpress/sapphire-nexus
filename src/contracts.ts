@@ -23,6 +23,7 @@ export const MARKET_RESEARCH_SCHEMA_ID = "sapphire.nexus.market_research_posture
 export const OPERATOR_NEXT_ACTIONS_SCHEMA_ID = "sapphire.nexus.operator_next_actions.v1";
 export const CLIENT_BRIEF_SCHEMA_ID = "sapphire.nexus.client_brief.v1";
 export const CLIENT_DEMO_SCHEMA_ID = "sapphire.nexus.client_demo.v1";
+export const CLIENT_CLAIM_READINESS_SCHEMA_ID = "sapphire.nexus.client_claim_readiness.v1";
 export const VERIFICATION_MANIFEST_SCHEMA_ID = "sapphire.nexus.verification_manifest.v1";
 export const DATA_FRESHNESS_SCHEMA_ID = "sapphire.nexus.data_freshness.v1";
 export const DATA_REFRESH_PLAN_SCHEMA_ID = "sapphire.nexus.data_refresh_plan.v1";
@@ -101,6 +102,7 @@ export function buildWellKnown(origin: string) {
       dataRefreshPlan: "/v1/data/refresh-plan",
       metadataRefreshArtifact: "/v1/data/refresh-artifact",
       clientDemo: "/v1/client/demo",
+      clientClaimReadiness: "/v1/client/claim-readiness",
       thesis: "/v1/thesis",
       landscape: "/v1/landscape",
       readiness: "/v1/readiness",
@@ -126,6 +128,7 @@ export function buildWellKnown(origin: string) {
       dataRefreshPlan: DATA_REFRESH_PLAN_SCHEMA_ID,
       metadataRefreshArtifact: METADATA_REFRESH_ARTIFACT_SCHEMA_ID,
       clientDemo: CLIENT_DEMO_SCHEMA_ID,
+      clientClaimReadiness: CLIENT_CLAIM_READINESS_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
       landscape: LANDSCAPE_SCHEMA_ID,
       readiness: NEXUS_READINESS_SCHEMA_ID,
@@ -182,6 +185,15 @@ export function buildOperatorNextActions(now = new Date()) {
       route: "/v1/deployment",
       approvalRequired: false,
       reason: "Revision identity and smoke checks already exist and are safe to rerun.",
+    },
+    {
+      id: "client-claim-readiness",
+      lane: "agent-safe",
+      label: "Check client claim readiness before demos or public claims",
+      status: "ready",
+      route: "/v1/client/claim-readiness",
+      approvalRequired: false,
+      reason: "The route shows when checked-in metadata needs review before current client claims.",
     },
     {
       id: "metadata-refresh-artifact",
@@ -269,6 +281,7 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         "/v1/data/freshness",
         "/v1/data/refresh-plan",
         "/v1/data/refresh-artifact",
+        "/v1/client/claim-readiness",
         "/v1/client/demo",
         "/openapi.json",
         "/v1/verification-manifest",
@@ -312,6 +325,12 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         clientValue: "Packages the checked-in refresh evidence for source-rights review before metadata writes.",
       },
       {
+        label: "Claim readiness",
+        status: "live",
+        route: "/v1/client/claim-readiness",
+        clientValue: "Shows whether freshness and revision gates allow current client claims.",
+      },
+      {
         label: "Demo flow",
         status: "live",
         route: "/v1/client/demo",
@@ -345,6 +364,7 @@ export function buildVerificationManifest(origin: string, now = new Date()) {
     { id: "dataFreshness", route: "/v1/data/freshness", proves: "checked-in data freshness is explicit before client claims" },
     { id: "dataRefreshPlan", route: "/v1/data/refresh-plan", proves: "metadata refreshes have a source-rights review path" },
     { id: "metadataRefreshArtifact", route: "/v1/data/refresh-artifact", proves: "refresh review evidence is metadata-only and source-rights gated" },
+    { id: "clientClaimReadiness", route: "/v1/client/claim-readiness", proves: "client-current claims are gated on freshness and revision review" },
     { id: "clientDemo", route: "/v1/client/demo", proves: "client walkthrough is public, route-linked, and claim-safe" },
     { id: "clientBrief", route: "/v1/client/brief", proves: "client-safe summary is public and non-hype" },
     { id: "verificationManifest", route: "/v1/verification-manifest", proves: "verification contract is public and self-describing" },

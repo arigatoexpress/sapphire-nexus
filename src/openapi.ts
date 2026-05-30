@@ -32,6 +32,12 @@ export function buildOpenApiSpec(origin: string) {
           discovery.schemaIds.metadataRefreshArtifact,
         ),
         route("clientDemo", discovery.routes.clientDemo, "Client-safe demo flow", discovery.schemaIds.clientDemo),
+        route(
+          "clientClaimReadiness",
+          discovery.routes.clientClaimReadiness,
+          "Client claim readiness gates",
+          discovery.schemaIds.clientClaimReadiness,
+        ),
         route("clientBrief", discovery.routes.clientBrief, "Client-safe production brief", discovery.schemaIds.clientBrief),
         route(
           "verificationManifest",

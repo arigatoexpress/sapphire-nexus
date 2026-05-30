@@ -58,6 +58,7 @@ Public deployments should set `SAPPHIRE_NEXUS_PUBLIC_MODE=true`. Public mode dis
 | `GET /v1/evidence-ledger` | Hash-addressed evidence records |
 | `GET /v1/model-gateway` | Local model gateway contract |
 | `GET /v1/deployment` | Safe deployment identity |
+| `GET /v1/client/claim-readiness` | Freshness and revision gates for client-current claims |
 | `GET /openapi.json` | OpenAPI 3.1 contract |
 
 ## Agent collaborators
