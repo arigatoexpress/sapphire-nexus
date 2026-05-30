@@ -1,27 +1,12 @@
 # Sapphire Nexus
 
-Sapphire Nexus is a clean, local-first intelligence kernel for Ari's AI, quant,
-trading-research, and runtime-control work. It is intentionally not a rewrite of
-every old Sapphire surface. It mines useful contracts and ideas, then exposes a
-small typed API and operator workbench.
+Local-first intelligence kernel for AI, quant research, and runtime evidence. A Hono/TypeScript API with a first-screen operator workbench, source-rights-aware landscape catalog, and local model gateway contracts.
 
-## What It Is
+## What this does
 
-- A Hono/TypeScript API with typed contracts.
-- A first-screen operator workbench.
-- A source-rights-aware landscape catalog.
-- A local model gateway contract for Ollama now and Windows GPU serving later.
-- A paper-only market research posture.
+Nexus turns AI, quant, trading-research, and runtime context into typed intelligence products. It provides a clean operator workbench, public API contracts, and adapter readiness checks — all with risky lanes disabled by default.
 
-## What It Is Not
-
-- Not THO / Project-Go-Forward.
-- Not a live trading system.
-- Not a Telegram sender.
-- Not a wallet signer or payment settlement service.
-- Not a place to dump raw generated agent logs.
-
-## Quick Start
+## Quick start
 
 ```bash
 npm install
@@ -29,163 +14,56 @@ npm run verify
 npm run dev
 ```
 
-Default URL: `http://127.0.0.1:4420`.
+Default URL: `http://127.0.0.1:4420`
 
-## Production
-
-The public deployment entrypoint is `api/index.ts`, with Vercel routing all
-paths through the Hono app. Public deployments should set
-`SAPPHIRE_NEXUS_PUBLIC_MODE=true`; Vercel also sets `VERCEL=1`, which activates
-the same public-safe behavior automatically.
-
-Public mode disables private local adapter probes for Ollama, Windows GPU, AOE,
-and agent-runtime-control-plane. The deployed workbench still renders the
-readiness rollup, but local-only checks are marked `disabled` instead of trying
-to reach private infrastructure from production.
-
-All public responses include basic hardening headers for content sniffing,
-referrer leakage, framing, cross-origin opener isolation, and browser
-permissions. Production smoke validates the core header set on every checked
-route.
-
-After deploy, run:
-
+**Production smoke:**
 ```bash
 npm run smoke:production -- https://your-deployment-url
 ```
 
-When checking a specific Cloud Run revision, pass the revision observed from
-`gcloud run services describe` so smoke fails if the public deployment identity
-does not match:
+## Architecture
 
-```bash
-SAPPHIRE_NEXUS_EXPECTED_REVISION=sapphire-nexus-00008-r46 npm run smoke:production -- https://your-deployment-url
+```
+Operator Workbench  ◄──►  Hono API  ◄──►  Adapters (repo-mining, trending-signals,
+                                              public-sources, model-gateway, AOE,
+                                              agent-runtime publication)
 ```
 
-For Cloud Run, the app uses `PORT` and binds to `0.0.0.0` when `K_SERVICE` is
-present. The checked-in `Dockerfile` sets `SAPPHIRE_NEXUS_PUBLIC_MODE=true` so
-the service exposes the public workbench and contracts without probing private
-local infrastructure.
+Public deployments should set `SAPPHIRE_NEXUS_PUBLIC_MODE=true`. Public mode disables private local adapter probes (Ollama, Windows GPU, AOE, agent-runtime) and returns hardening headers on every route.
 
-## Core Routes
+## Key features
 
-- `GET /`
-- `GET /health`
-- `GET /.well-known/sapphire-nexus.json`
-- `GET /openapi.json`
-- `GET /llms.txt`
-- `GET /robots.txt`
-- `GET /v1/deployment`
-- `GET /v1/data/freshness`
-- `GET /v1/data/refresh-plan`
-- `GET /v1/data/refresh-artifact`
-- `GET /v1/client/demo`
-- `GET /v1/client/brief`
-- `GET /v1/verification-manifest`
-- `GET /v1/thesis`
-- `GET /v1/landscape`
-- `GET /v1/readiness`
-- `GET /v1/evidence-ledger`
-- `GET /v1/adapters/repo-mining/readiness`
-- `GET /v1/adapters/trending-signals/readiness`
-- `GET /v1/adapters/public-sources/readiness`
-- `GET /v1/adapters/aoe/readiness`
-- `GET /v1/adapters/agent-runtime/publication`
-- `GET /v1/model-gateway`
-- `GET /v1/model-gateway/readiness`
-- `GET /v1/model-gateway/prompt-smoke`
-- `GET /v1/market/research-posture`
+- **Operator workbench** — first-screen readiness rollup with evidence ledger and landscape catalog
+- **Typed API contracts** — OpenAPI 3.1, `llms.txt`, and `.well-known/sapphire-nexus.json`
+- **Adapter readiness** — repo-mining, trending-signals, public-sources, model-gateway, AOE, agent-runtime
+- **Local model gateway** — Ollama contracts with prompt-smoke disabled by default
+- **Source-rights aware** — stores metadata, hashes, summaries, and provenance; never raw private payloads
+- **Safety-first** — live trading, Telegram sends, wallet signing, and secret handling are all disabled by default
 
-## Safety Posture
+## Tech stack
 
-All risky lanes are disabled by default: live trading, money movement, wallet
-signing, Telegram sends, customer sends, secret handling, and production
-infrastructure mutation.
+- Node.js ≥ 22
+- TypeScript 5.9+
+- Hono
+- Vitest
+- Vercel / Cloud Run / Docker
 
-`GET /v1/model-gateway/readiness` performs health-only readbacks against the
-configured local model gateways. It does not send prompts, start training, read
-secrets, or mutate runtimes.
+## Core routes
 
-`GET /v1/readiness` rolls core health, evidence, repo-mining,
-trending-signals, public-source, model gateway, prompt smoke, AOE, and
-agent-runtime publication checks into one operator status envelope. It keeps
-per-check details summary-only and does not store raw payloads.
+| Route | Purpose |
+|-------|---------|
+| `GET /health` | Liveness check |
+| `GET /v1/readiness` | Full operator status envelope |
+| `GET /v1/landscape` | Source-rights-aware landscape catalog |
+| `GET /v1/evidence-ledger` | Hash-addressed evidence records |
+| `GET /v1/model-gateway` | Local model gateway contract |
+| `GET /v1/deployment` | Safe deployment identity |
+| `GET /openapi.json` | OpenAPI 3.1 contract |
 
-`GET /v1/model-gateway/prompt-smoke` is disabled by default. When
-`SAPPHIRE_NEXUS_PROMPT_SMOKE_ENABLED=true` and
-`SAPPHIRE_NEXUS_PROMPT_SMOKE_MODEL` is set, it sends one fixed health-check
-prompt to local Ollama and returns only status, hashes, booleans, and lengths.
-It does not return or store prompt text, completion text, user prompts, cloud
-fallbacks, training jobs, or runtime mutations.
+## Agent collaborators
 
-`GET /v1/evidence-ledger` turns the landscape catalog into stable, hash-addressed
-evidence records. It stores links, source ids, rights metadata, summaries, and
-hashes; it does not store raw private payloads.
+See [AGENTS.md](AGENTS.md) for hard stops, build rules, and adapter conventions.
 
-`GET /v1/deployment` exposes a safe deployment identity for operators:
-origin, provider, Cloud Run service/revision metadata when present, public mode,
-and the production verification checklist. It does not dump environment
-variables, read secrets, mutate infrastructure, or broaden permissions.
+## License
 
-`GET /v1/data/freshness` summarizes the freshness of checked-in data products
-before client claims. It reads only repository metadata, reports TTLs, caveats,
-manual-refresh requirements, and stable hashes, and never fetches remote
-sources or publishes raw payloads.
-
-`GET /v1/data/refresh-plan` publishes the reviewed path for refreshing stale
-checked-in metadata. It describes official-source inputs, target fields,
-proof requirements, source-rights review, and blocked outputs. The route itself
-does not fetch remote sources, write files, or store raw payloads.
-
-`GET /v1/data/refresh-artifact` packages the checked-in refresh evidence into a
-metadata-only review artifact before any future data write. It links the refresh
-plan, freshness state, target fields, caveats, and stable hashes, and remains
-blocked from remote fetches, writes, raw payload storage, or automatic metadata
-updates.
-
-`GET /v1/client/demo` publishes a short route-linked walkthrough for client and
-operator demos. It identifies what each public route proves, which claims remain
-blocked, and when revision/freshness verification is required. It does not send
-messages, mutate runtimes, expose private infrastructure, or imply live trading.
-
-`GET /openapi.json` exposes a small OpenAPI 3.1 contract for the read-only
-public API. It lists the public JSON routes, schema ids, and the disabled
-live-action posture so clients and agents can integrate without scraping the
-workbench.
-
-`GET /v1/adapters/public-sources/readiness` summarizes the public open-source
-shortlist as a rights-cleared adapter. It classifies permissive references,
-copyleft/reference-only sources, and sources needing review without fetching
-remote payloads, vendoring code, or making license override claims.
-
-`GET /v1/adapters/repo-mining/readiness` summarizes Ari-owned repo-mining
-signals from checked-in landscape metadata. It exposes repo links, mining
-intent, avoidance guidance, rights envelopes, and stable hashes only. It does
-not fetch remote repositories, vendor source code, delete source repos, broaden
-permissions, or collapse protected products into Nexus.
-
-`GET /v1/adapters/trending-signals/readiness` summarizes checked-in GitHub
-trend-signal snapshots from the landscape catalog. It exposes repo links,
-snapshot stars-this-week values, fit summaries, freshness caveats, and stable
-hashes only. It does not fetch GitHub live, vendor source code, store raw
-payload dumps, or allow current-trend claims without manual refresh.
-
-`GET /llms.txt` and `GET /robots.txt` expose public metadata for AI agents,
-crawlers, and operators. They summarize the public routes, source-rights
-posture, and hard safety boundaries without exposing private data or local
-adapter details.
-
-`GET /v1/adapters/aoe/readiness` reads AOE's public health, discovery,
-readiness, and contract endpoints and keeps only summaries. It does not settle
-payments, unlock paid content, send Telegram messages, or store raw contract
-bundles.
-
-When AOE is disabled or unreachable, Nexus returns an `operatorHint` with the
-expected base URL and `autoStart=false`. Nexus does not start, deploy, or mutate
-AOE for you; run AOE separately and point `SAPPHIRE_NEXUS_AOE_URL` at its
-read-only contract surface.
-
-`GET /v1/adapters/agent-runtime/publication` runs the control plane's
-publication-plan script and returns a summary of tracked-source readiness,
-generated-output exclusion, and visibility gates. It does not read generated
-payload contents, broaden permissions, publish repos, or mutate runtimes.
+MIT

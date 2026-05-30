@@ -1,5 +1,6 @@
 node_modules/
 dist/
+build/
 .DS_Store
 .env
 .env.*
@@ -7,3 +8,9 @@ dist/
 data/generated/
 coverage/
 .playwright-cli/
+*.tsbuildinfo
+logs/
+*.log
+.cache/
+.vscode/
+.idea/
