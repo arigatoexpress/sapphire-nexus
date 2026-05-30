@@ -25,6 +25,8 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("Deployment Identity");
     expect(html).toContain("Client Brief");
     expect(html).toContain("/v1/client/brief");
+    expect(html).toContain("Claim Readiness");
+    expect(html).toContain("/v1/client/claim-readiness");
     expect(html).toContain("Client Demo");
     expect(html).toContain("/v1/client/demo");
     expect(html).toContain("Data Freshness");
@@ -68,6 +70,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.dataFreshness).toBe("/v1/data/freshness");
     expect(discovery.routes.dataRefreshPlan).toBe("/v1/data/refresh-plan");
     expect(discovery.routes.metadataRefreshArtifact).toBe("/v1/data/refresh-artifact");
+    expect(discovery.routes.clientClaimReadiness).toBe("/v1/client/claim-readiness");
     expect(discovery.routes.clientDemo).toBe("/v1/client/demo");
     expect(discovery.routes.clientBrief).toBe("/v1/client/brief");
     expect(discovery.routes.verificationManifest).toBe("/v1/verification-manifest");
@@ -96,6 +99,7 @@ describe("Sapphire Nexus API", () => {
     expect(openApi.openapi).toBe("3.1.0");
     expect(openApi.servers[0].url).toBe("http://127.0.0.1:4420");
     expect(openApi.paths["/v1/client/brief"].get.operationId).toBe("clientBrief");
+    expect(openApi.paths["/v1/client/claim-readiness"].get.operationId).toBe("clientClaimReadiness");
     expect(openApi.paths["/v1/client/demo"].get.operationId).toBe("clientDemo");
     expect(openApi.paths["/v1/data/freshness"].get.operationId).toBe("dataFreshness");
     expect(openApi.paths["/v1/data/refresh-plan"].get.operationId).toBe("dataRefreshPlan");
@@ -148,6 +152,19 @@ describe("Sapphire Nexus API", () => {
     expect(refreshArtifact.summary.writesPerformed).toBe(false);
     expect(refreshArtifact.safety.writesDataInThisRoute).toBe(false);
     expect(refreshArtifact.policy.readyForAutomaticWrite).toBe(false);
+
+    const claimReadinessRes = await app.request("http://127.0.0.1:4420/v1/client/claim-readiness");
+    expect(claimReadinessRes.status).toBe(200);
+    const claimReadiness = await claimReadinessRes.json();
+    expect(claimReadiness.schemaId).toBe("sapphire.nexus.client_claim_readiness.v1");
+    expect(claimReadiness.origin).toBe("http://127.0.0.1:4420");
+    expect(["ready", "review_required"]).toContain(claimReadiness.summary.status);
+    expect(typeof claimReadiness.summary.clientCurrentClaimsAllowed).toBe("boolean");
+    expect(claimReadiness.summary.liveActionsEnabled).toBe(false);
+    expect(claimReadiness.gates.map((gate: { route: string }) => gate.route)).toContain("/v1/data/freshness");
+    expect(claimReadiness.safety.fetchesRemoteSources).toBe(false);
+    expect(claimReadiness.safety.writesDataInThisRoute).toBe(false);
+    expect(claimReadiness.policy.revisionVerificationRequiredBeforeProductionClaims).toBe(true);
 
     const clientDemoRes = await app.request("http://127.0.0.1:4420/v1/client/demo");
     expect(clientDemoRes.status).toBe(200);
@@ -243,9 +260,10 @@ describe("Sapphire Nexus API", () => {
     const nextActions = await nextActionsRes.json();
     expect(nextActions.schemaId).toBe("sapphire.nexus.operator_next_actions.v1");
     expect(nextActions.summary.liveActionsEnabled).toBe(false);
-    expect(nextActions.summary.agentSafe).toBe(3);
+    expect(nextActions.summary.agentSafe).toBe(4);
     expect(nextActions.summary.ariDecision).toBe(2);
     expect(nextActions.safety.mutatesRuntime).toBe(false);
+    expect(nextActions.actions.map((action: { route: string | null }) => action.route)).toContain("/v1/client/claim-readiness");
     expect(nextActions.actions.map((action: { route: string | null }) => action.route)).toContain("/v1/data/refresh-artifact");
     expect(nextActions.actions.map((action: { lane: string }) => action.lane)).toContain("ari-only");
   });

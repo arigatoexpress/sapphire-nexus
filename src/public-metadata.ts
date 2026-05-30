@@ -15,6 +15,7 @@ Status: read-only public surface; live actions disabled.
 - GET /v1/data/freshness
 - GET /v1/data/refresh-plan
 - GET /v1/data/refresh-artifact
+- GET /v1/client/claim-readiness
 - GET /v1/client/demo
 - GET /v1/client/brief
 - GET /v1/verification-manifest

@@ -25,6 +25,7 @@ const checks = [
       body.routes?.dataFreshness === "/v1/data/freshness" &&
       body.routes?.dataRefreshPlan === "/v1/data/refresh-plan" &&
       body.routes?.metadataRefreshArtifact === "/v1/data/refresh-artifact" &&
+      body.routes?.clientClaimReadiness === "/v1/client/claim-readiness" &&
       body.routes?.clientDemo === "/v1/client/demo" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
       body.routes?.verificationManifest === "/v1/verification-manifest" &&
@@ -43,6 +44,7 @@ const checks = [
       body.paths?.["/v1/data/freshness"]?.get?.operationId === "dataFreshness" &&
       body.paths?.["/v1/data/refresh-plan"]?.get?.operationId === "dataRefreshPlan" &&
       body.paths?.["/v1/data/refresh-artifact"]?.get?.operationId === "metadataRefreshArtifact" &&
+      body.paths?.["/v1/client/claim-readiness"]?.get?.operationId === "clientClaimReadiness" &&
       body.paths?.["/v1/client/demo"]?.get?.operationId === "clientDemo" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
       body.paths?.["/v1/adapters/repo-mining/readiness"]?.get?.operationId === "repoMiningReadiness" &&
@@ -99,6 +101,20 @@ const checks = [
       body.summary?.writesPerformed === false &&
       body.safety?.writesDataInThisRoute === false &&
       body.policy?.readyForAutomaticWrite === false,
+  },
+  {
+    id: "clientClaimReadiness",
+    path: "/v1/client/claim-readiness",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.client_claim_readiness.v1" &&
+      body.origin === expectedOrigin &&
+      ["ready", "review_required"].includes(body.summary?.status) &&
+      typeof body.summary?.clientCurrentClaimsAllowed === "boolean" &&
+      body.summary?.reviewDatasets >= 0 &&
+      body.summary?.liveActionsEnabled === false &&
+      body.safety?.fetchesRemoteSources === false &&
+      body.safety?.writesDataInThisRoute === false &&
+      body.policy?.revisionVerificationRequiredBeforeProductionClaims === true,
   },
   {
     id: "clientDemo",
@@ -169,7 +185,7 @@ const checks = [
     path: "/v1/operator/next-actions",
     validate: (body) =>
       body.schemaId === "sapphire.nexus.operator_next_actions.v1" &&
-      body.summary?.agentSafe === 3 &&
+      body.summary?.agentSafe === 4 &&
       body.summary?.ariDecision === 2 &&
       body.safety?.mutatesRuntime === false,
   },
@@ -182,6 +198,8 @@ const checks = [
       text.includes("Deployment Identity") &&
       text.includes("Client Brief") &&
       text.includes("/v1/client/brief") &&
+      text.includes("Claim Readiness") &&
+      text.includes("/v1/client/claim-readiness") &&
       text.includes("Client Demo") &&
       text.includes("/v1/client/demo") &&
       text.includes("Data Freshness") &&
