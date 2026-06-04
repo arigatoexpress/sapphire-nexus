@@ -198,6 +198,8 @@ const checks = [
       text.includes("Deployment Identity") &&
       text.includes("Client Brief") &&
       text.includes("/v1/client/brief") &&
+      text.includes("Claim Guard") &&
+      text.includes("client-current claims") &&
       text.includes("Claim Readiness") &&
       text.includes("/v1/client/claim-readiness") &&
       text.includes("Client Demo") &&

@@ -1,4 +1,5 @@
 import type { Landscape } from "./contracts.js";
+import { buildClientClaimReadiness } from "./client-claim-readiness.js";
 import { buildClientBrief, buildOperatorNextActions, buildSafetyBoundary, buildVerificationManifest } from "./contracts.js";
 import type { buildDeploymentIdentity } from "./deployment.js";
 import type { checkNexusReadiness } from "./readiness.js";
@@ -12,6 +13,8 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
   const topOpenSource = landscape.openSourceShortlist.slice(0, 6);
   const readinessTone = readiness.status === "ready" ? "ready" : "degraded";
   const clientBrief = buildClientBrief(deployment.origin, landscape);
+  const claimReadiness = buildClientClaimReadiness(deployment.origin, landscape);
+  const claimReadinessTone = claimReadiness.summary.status === "ready" ? "ready" : "degraded";
   const verification = buildVerificationManifest(deployment.origin);
   const nextActions = buildOperatorNextActions();
   const apiLinks = [
@@ -134,6 +137,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
       font-size: 13px;
       line-height: 1.35;
     }
+    .pill + .metric-row { margin-top: 10px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
     th { color: var(--muted); font-size: 12px; font-weight: 650; }
@@ -330,6 +334,25 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
         </div>
       </section>
       <section>
+        <div class="section-head"><h2>Claim Guard</h2><span class="subtle">client-current claims</span></div>
+        <div class="body">
+          <div class="pill"><span class="badge ${claimReadinessTone}">${escapeHtml(claimReadiness.summary.status)}</span> <span class="subtle">client current claims ${claimReadiness.summary.clientCurrentClaimsAllowed ? "allowed" : "blocked"}</span></div>
+          <div class="metric-row">
+            <div class="metric"><strong>${claimReadiness.summary.datasets}</strong><span class="subtle">datasets checked</span></div>
+            <div class="metric"><strong>${claimReadiness.summary.readyDatasets}</strong><span class="subtle">ready datasets</span></div>
+            <div class="metric"><strong>${claimReadiness.summary.reviewDatasets}</strong><span class="subtle">review datasets</span></div>
+          </div>
+          <div class="check-list">
+            ${claimReadiness.gates
+              .map(
+                (gate) =>
+                  `<div class="check"><div><div class="check-name">${escapeHtml(gate.id)}</div><div class="check-detail">${escapeHtml(gate.route)} · ${escapeHtml(gate.state)} · ${escapeHtml(gate.reason)}</div></div><span class="badge ${gateTone(gate.state)}">${escapeHtml(displayGateState(gate.state))}</span></div>`,
+              )
+              .join("")}
+          </div>
+        </div>
+      </section>
+      <section>
         <div class="section-head"><h2>Verification</h2><span class="subtle">claim checks</span></div>
         <div class="body">
           <div class="metric-row">
@@ -419,6 +442,20 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
 
 function displayValue(value: string | null) {
   return value ?? "not set";
+}
+
+function displayGateState(state: string) {
+  const labels: Record<string, string> = {
+    optional: "optional",
+    required_before_production_claim: "required",
+    review_required: "review",
+    satisfied: "satisfied",
+  };
+  return labels[state] ?? state;
+}
+
+function gateTone(state: string) {
+  return state === "satisfied" ? "ready" : state === "optional" ? "disabled" : "degraded";
 }
 
 function escapeHtml(value: string) {
