@@ -28,6 +28,7 @@ export const VERIFICATION_MANIFEST_SCHEMA_ID = "sapphire.nexus.verification_mani
 export const DATA_FRESHNESS_SCHEMA_ID = "sapphire.nexus.data_freshness.v1";
 export const DATA_REFRESH_PLAN_SCHEMA_ID = "sapphire.nexus.data_refresh_plan.v1";
 export const METADATA_REFRESH_ARTIFACT_SCHEMA_ID = "sapphire.nexus.metadata_refresh_artifact.v1";
+export const DATA_REVIEW_QUEUE_SCHEMA_ID = "sapphire.nexus.data_review_queue.v1";
 const FIXED_PROMPT_SMOKE_PROMPT = "Return exactly the token NEXUS_OK.";
 
 const LandscapeSchema = z.object({
@@ -101,6 +102,7 @@ export function buildWellKnown(origin: string) {
       dataFreshness: "/v1/data/freshness",
       dataRefreshPlan: "/v1/data/refresh-plan",
       metadataRefreshArtifact: "/v1/data/refresh-artifact",
+      dataReviewQueue: "/v1/data/review-queue",
       clientDemo: "/v1/client/demo",
       clientClaimReadiness: "/v1/client/claim-readiness",
       thesis: "/v1/thesis",
@@ -127,6 +129,7 @@ export function buildWellKnown(origin: string) {
       dataFreshness: DATA_FRESHNESS_SCHEMA_ID,
       dataRefreshPlan: DATA_REFRESH_PLAN_SCHEMA_ID,
       metadataRefreshArtifact: METADATA_REFRESH_ARTIFACT_SCHEMA_ID,
+      dataReviewQueue: DATA_REVIEW_QUEUE_SCHEMA_ID,
       clientDemo: CLIENT_DEMO_SCHEMA_ID,
       clientClaimReadiness: CLIENT_CLAIM_READINESS_SCHEMA_ID,
       thesis: THESIS_SCHEMA_ID,
@@ -205,6 +208,15 @@ export function buildOperatorNextActions(now = new Date()) {
       reason: "The artifact is metadata-only and separates refresh evidence from any future data write.",
     },
     {
+      id: "data-review-queue",
+      lane: "agent-safe",
+      label: "Use the review queue to prioritize claim-blocking metadata reviews",
+      status: "ready",
+      route: "/v1/data/review-queue",
+      approvalRequired: false,
+      reason: "The queue turns stale checked-in metadata into source-rights review work without fetching or writing data.",
+    },
+    {
       id: "rights-cleared-adapter",
       lane: "agent-safe",
       label: "Add the next rights-cleared adapter from explicit public metadata",
@@ -281,6 +293,7 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         "/v1/data/freshness",
         "/v1/data/refresh-plan",
         "/v1/data/refresh-artifact",
+        "/v1/data/review-queue",
         "/v1/client/claim-readiness",
         "/v1/client/demo",
         "/openapi.json",
@@ -325,6 +338,12 @@ export function buildClientBrief(origin: string, landscape = loadLandscape(), no
         clientValue: "Packages the checked-in refresh evidence for source-rights review before metadata writes.",
       },
       {
+        label: "Review queue",
+        status: "live",
+        route: "/v1/data/review-queue",
+        clientValue: "Prioritizes claim-blocking metadata reviews without fetching sources or writing data.",
+      },
+      {
         label: "Claim readiness",
         status: "live",
         route: "/v1/client/claim-readiness",
@@ -364,6 +383,7 @@ export function buildVerificationManifest(origin: string, now = new Date()) {
     { id: "dataFreshness", route: "/v1/data/freshness", proves: "checked-in data freshness is explicit before client claims" },
     { id: "dataRefreshPlan", route: "/v1/data/refresh-plan", proves: "metadata refreshes have a source-rights review path" },
     { id: "metadataRefreshArtifact", route: "/v1/data/refresh-artifact", proves: "refresh review evidence is metadata-only and source-rights gated" },
+    { id: "dataReviewQueue", route: "/v1/data/review-queue", proves: "claim-blocking metadata reviews are prioritized without writes" },
     { id: "clientClaimReadiness", route: "/v1/client/claim-readiness", proves: "client-current claims are gated on freshness and revision review" },
     { id: "clientDemo", route: "/v1/client/demo", proves: "client walkthrough is public, route-linked, and claim-safe" },
     { id: "clientBrief", route: "/v1/client/brief", proves: "client-safe summary is public and non-hype" },

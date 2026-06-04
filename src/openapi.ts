@@ -31,6 +31,7 @@ export function buildOpenApiSpec(origin: string) {
           "Metadata refresh review artifact",
           discovery.schemaIds.metadataRefreshArtifact,
         ),
+        route("dataReviewQueue", discovery.routes.dataReviewQueue, "Metadata review queue", discovery.schemaIds.dataReviewQueue),
         route("clientDemo", discovery.routes.clientDemo, "Client-safe demo flow", discovery.schemaIds.clientDemo),
         route(
           "clientClaimReadiness",

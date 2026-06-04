@@ -25,6 +25,7 @@ const checks = [
       body.routes?.dataFreshness === "/v1/data/freshness" &&
       body.routes?.dataRefreshPlan === "/v1/data/refresh-plan" &&
       body.routes?.metadataRefreshArtifact === "/v1/data/refresh-artifact" &&
+      body.routes?.dataReviewQueue === "/v1/data/review-queue" &&
       body.routes?.clientClaimReadiness === "/v1/client/claim-readiness" &&
       body.routes?.clientDemo === "/v1/client/demo" &&
       body.routes?.clientBrief === "/v1/client/brief" &&
@@ -44,6 +45,7 @@ const checks = [
       body.paths?.["/v1/data/freshness"]?.get?.operationId === "dataFreshness" &&
       body.paths?.["/v1/data/refresh-plan"]?.get?.operationId === "dataRefreshPlan" &&
       body.paths?.["/v1/data/refresh-artifact"]?.get?.operationId === "metadataRefreshArtifact" &&
+      body.paths?.["/v1/data/review-queue"]?.get?.operationId === "dataReviewQueue" &&
       body.paths?.["/v1/client/claim-readiness"]?.get?.operationId === "clientClaimReadiness" &&
       body.paths?.["/v1/client/demo"]?.get?.operationId === "clientDemo" &&
       body.paths?.["/v1/verification-manifest"]?.get?.operationId === "verificationManifest" &&
@@ -101,6 +103,22 @@ const checks = [
       body.summary?.writesPerformed === false &&
       body.safety?.writesDataInThisRoute === false &&
       body.policy?.readyForAutomaticWrite === false,
+  },
+  {
+    id: "dataReviewQueue",
+    path: "/v1/data/review-queue",
+    validate: (body) =>
+      body.schemaId === "sapphire.nexus.data_review_queue.v1" &&
+      body.origin === expectedOrigin &&
+      ["ready_for_review", "review_required"].includes(body.summary?.status) &&
+      body.summary?.items >= 1 &&
+      body.summary?.claimBlockingItems >= 0 &&
+      body.summary?.liveActionsEnabled === false &&
+      body.summary?.remoteFetchesPerformed === false &&
+      body.summary?.writesPerformed === false &&
+      body.safety?.fetchesRemoteSources === false &&
+      body.safety?.writesDataInThisRoute === false &&
+      body.policy?.automaticWritesAllowed === false,
   },
   {
     id: "clientClaimReadiness",
@@ -185,7 +203,7 @@ const checks = [
     path: "/v1/operator/next-actions",
     validate: (body) =>
       body.schemaId === "sapphire.nexus.operator_next_actions.v1" &&
-      body.summary?.agentSafe === 4 &&
+      body.summary?.agentSafe === 5 &&
       body.summary?.ariDecision === 2 &&
       body.safety?.mutatesRuntime === false,
   },
@@ -210,6 +228,8 @@ const checks = [
       text.includes("/v1/data/refresh-plan") &&
       text.includes("Refresh Artifact") &&
       text.includes("/v1/data/refresh-artifact") &&
+      text.includes("Review Queue") &&
+      text.includes("/v1/data/review-queue") &&
       text.includes("Verification") &&
       text.includes("/v1/verification-manifest") &&
       text.includes("API Surface") &&
