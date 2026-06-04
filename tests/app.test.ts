@@ -25,6 +25,10 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("Deployment Identity");
     expect(html).toContain("Client Brief");
     expect(html).toContain("/v1/client/brief");
+    expect(html).toContain("Claim Guard");
+    expect(html).toContain("client-current claims");
+    expect(html).toContain("review datasets");
+    expect(html).toContain("verify-revision");
     expect(html).toContain("Claim Readiness");
     expect(html).toContain("/v1/client/claim-readiness");
     expect(html).toContain("Client Demo");
