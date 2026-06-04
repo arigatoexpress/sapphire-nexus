@@ -39,6 +39,9 @@ describe("Sapphire Nexus API", () => {
     expect(html).toContain("/v1/data/refresh-plan");
     expect(html).toContain("Refresh Artifact");
     expect(html).toContain("/v1/data/refresh-artifact");
+    expect(html).toContain("Review Queue");
+    expect(html).toContain("source-rights work");
+    expect(html).toContain("/v1/data/review-queue");
     expect(html).toContain("Verification");
     expect(html).toContain("/v1/verification-manifest");
     expect(html).toContain("API Surface");
@@ -74,6 +77,7 @@ describe("Sapphire Nexus API", () => {
     expect(discovery.routes.dataFreshness).toBe("/v1/data/freshness");
     expect(discovery.routes.dataRefreshPlan).toBe("/v1/data/refresh-plan");
     expect(discovery.routes.metadataRefreshArtifact).toBe("/v1/data/refresh-artifact");
+    expect(discovery.routes.dataReviewQueue).toBe("/v1/data/review-queue");
     expect(discovery.routes.clientClaimReadiness).toBe("/v1/client/claim-readiness");
     expect(discovery.routes.clientDemo).toBe("/v1/client/demo");
     expect(discovery.routes.clientBrief).toBe("/v1/client/brief");
@@ -108,6 +112,7 @@ describe("Sapphire Nexus API", () => {
     expect(openApi.paths["/v1/data/freshness"].get.operationId).toBe("dataFreshness");
     expect(openApi.paths["/v1/data/refresh-plan"].get.operationId).toBe("dataRefreshPlan");
     expect(openApi.paths["/v1/data/refresh-artifact"].get.operationId).toBe("metadataRefreshArtifact");
+    expect(openApi.paths["/v1/data/review-queue"].get.operationId).toBe("dataReviewQueue");
     expect(openApi.paths["/v1/verification-manifest"].get.operationId).toBe("verificationManifest");
     expect(openApi.paths["/v1/adapters/repo-mining/readiness"].get.operationId).toBe("repoMiningReadiness");
     expect(openApi.paths["/v1/adapters/trending-signals/readiness"].get.operationId).toBe("trendingSignalsReadiness");
@@ -156,6 +161,20 @@ describe("Sapphire Nexus API", () => {
     expect(refreshArtifact.summary.writesPerformed).toBe(false);
     expect(refreshArtifact.safety.writesDataInThisRoute).toBe(false);
     expect(refreshArtifact.policy.readyForAutomaticWrite).toBe(false);
+
+    const reviewQueueRes = await app.request("http://127.0.0.1:4420/v1/data/review-queue");
+    expect(reviewQueueRes.status).toBe(200);
+    const reviewQueue = await reviewQueueRes.json();
+    expect(reviewQueue.schemaId).toBe("sapphire.nexus.data_review_queue.v1");
+    expect(reviewQueue.origin).toBe("http://127.0.0.1:4420");
+    expect(["ready_for_review", "review_required"]).toContain(reviewQueue.summary.status);
+    expect(reviewQueue.summary.items).toBeGreaterThan(0);
+    expect(reviewQueue.summary.liveActionsEnabled).toBe(false);
+    expect(reviewQueue.summary.remoteFetchesPerformed).toBe(false);
+    expect(reviewQueue.summary.writesPerformed).toBe(false);
+    expect(reviewQueue.safety.fetchesRemoteSources).toBe(false);
+    expect(reviewQueue.safety.writesDataInThisRoute).toBe(false);
+    expect(reviewQueue.policy.automaticWritesAllowed).toBe(false);
 
     const claimReadinessRes = await app.request("http://127.0.0.1:4420/v1/client/claim-readiness");
     expect(claimReadinessRes.status).toBe(200);
@@ -264,11 +283,12 @@ describe("Sapphire Nexus API", () => {
     const nextActions = await nextActionsRes.json();
     expect(nextActions.schemaId).toBe("sapphire.nexus.operator_next_actions.v1");
     expect(nextActions.summary.liveActionsEnabled).toBe(false);
-    expect(nextActions.summary.agentSafe).toBe(4);
+    expect(nextActions.summary.agentSafe).toBe(5);
     expect(nextActions.summary.ariDecision).toBe(2);
     expect(nextActions.safety.mutatesRuntime).toBe(false);
     expect(nextActions.actions.map((action: { route: string | null }) => action.route)).toContain("/v1/client/claim-readiness");
     expect(nextActions.actions.map((action: { route: string | null }) => action.route)).toContain("/v1/data/refresh-artifact");
+    expect(nextActions.actions.map((action: { route: string | null }) => action.route)).toContain("/v1/data/review-queue");
     expect(nextActions.actions.map((action: { lane: string }) => action.lane)).toContain("ari-only");
   });
 

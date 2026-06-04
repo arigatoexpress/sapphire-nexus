@@ -3,6 +3,7 @@ import { buildClientClaimReadiness } from "./client-claim-readiness.js";
 import { buildClientBrief, buildOperatorNextActions, buildSafetyBoundary, buildVerificationManifest } from "./contracts.js";
 import type { buildDeploymentIdentity } from "./deployment.js";
 import type { checkNexusReadiness } from "./readiness.js";
+import { buildDataReviewQueue } from "./review-queue.js";
 
 type ReadinessReport = Awaited<ReturnType<typeof checkNexusReadiness>>;
 type DeploymentIdentity = ReturnType<typeof buildDeploymentIdentity>;
@@ -15,6 +16,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
   const clientBrief = buildClientBrief(deployment.origin, landscape);
   const claimReadiness = buildClientClaimReadiness(deployment.origin, landscape);
   const claimReadinessTone = claimReadiness.summary.status === "ready" ? "ready" : "degraded";
+  const reviewQueue = buildDataReviewQueue(deployment.origin, landscape);
   const verification = buildVerificationManifest(deployment.origin);
   const nextActions = buildOperatorNextActions();
   const apiLinks = [
@@ -27,6 +29,7 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
     { label: "Data Freshness", path: "/v1/data/freshness", detail: "claim freshness" },
     { label: "Refresh Plan", path: "/v1/data/refresh-plan", detail: "metadata review" },
     { label: "Refresh Artifact", path: "/v1/data/refresh-artifact", detail: "review packet" },
+    { label: "Review Queue", path: "/v1/data/review-queue", detail: "review work" },
     { label: "Readiness", path: "/v1/readiness", detail: "operator status" },
     { label: "Deployment", path: "/v1/deployment", detail: "live revision" },
     { label: "Repo Mining", path: "/v1/adapters/repo-mining/readiness", detail: "contract reuse" },
@@ -347,6 +350,25 @@ export function renderWorkbench(landscape: Landscape, readiness: ReadinessReport
               .map(
                 (gate) =>
                   `<div class="check"><div><div class="check-name">${escapeHtml(gate.id)}</div><div class="check-detail">${escapeHtml(gate.route)} · ${escapeHtml(gate.state)} · ${escapeHtml(gate.reason)}</div></div><span class="badge ${gateTone(gate.state)}">${escapeHtml(displayGateState(gate.state))}</span></div>`,
+              )
+              .join("")}
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="section-head"><h2>Review Queue</h2><span class="subtle">source-rights work</span></div>
+        <div class="body">
+          <div class="metric-row">
+            <div class="metric"><strong>${reviewQueue.summary.items}</strong><span class="subtle">review items</span></div>
+            <div class="metric"><strong>${reviewQueue.summary.claimBlockingItems}</strong><span class="subtle">claim-blocking</span></div>
+            <div class="metric"><strong>${reviewQueue.summary.ariReviewRequired}</strong><span class="subtle">Ari reviews</span></div>
+          </div>
+          <div class="check-list">
+            ${reviewQueue.items
+              .slice(0, 4)
+              .map(
+                (item) =>
+                  `<div class="check"><div><div class="check-name">${escapeHtml(item.label)}</div><div class="check-detail">${escapeHtml(item.priority)} · ${escapeHtml(item.targetPath)} · ${escapeHtml(item.sourceUrl)}</div></div><span class="badge degraded">${escapeHtml(item.lane)}</span></div>`,
               )
               .join("")}
           </div>
